@@ -1,0 +1,534 @@
+/* ============================================
+   Модальные окна авторизации - StormHosting UA
+   ============================================ */
+
+/* Основные модальные стили */
+.auth-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.auth-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.auth-modal-content {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 24px;
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    max-width: 480px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.auth-modal.show .auth-modal-content {
+    transform: scale(1) translateY(0);
+}
+
+/* Кнопка закрытия */
+.auth-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6c757d;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.auth-modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #495057;
+    transform: rotate(90deg);
+}
+
+/* Заголовок модального окна */
+.auth-modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-right: 40px;
+}
+
+.auth-modal-header h2 {
+    color: #2d3748;
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-modal-header p {
+    color: #718096;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Форма */
+.auth-form {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.form-label i {
+    margin-right: 8px;
+    color: #667eea;
+}
+
+.form-control {
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 14px 20px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    width: 100%;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    outline: none;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.form-control::placeholder {
+    color: #a0aec0;
+}
+
+/* Input groups */
+.input-group {
+    display: flex;
+    width: 100%;
+    position: relative;
+}
+
+.input-group-text {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border: 2px solid #e2e8f0;
+    border-right: none;
+    border-radius: 16px 0 0 16px;
+    padding: 14px 16px;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+}
+
+.input-group .form-control {
+    border-left: none;
+    border-radius: 0;
+}
+
+.input-group .btn {
+    border-radius: 0 16px 16px 0;
+    border-left: none;
+    border: 2px solid #e2e8f0;
+    border-left: none;
+}
+
+/* Кнопки */
+.btn-auth {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 16px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    width: 100%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-auth:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-auth:active {
+    transform: translateY(0);
+}
+
+.btn-auth:disabled {
+    opacity: 0.7;
+    transform: none;
+    cursor: not-allowed;
+}
+
+.btn-outline-secondary {
+    border: 2px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.8);
+    color: #718096;
+    backdrop-filter: blur(10px);
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* Checkbox и radio */
+.form-check {
+    margin: 20px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.form-check-input {
+    margin-top: 4px;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.form-check-input:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-check-label {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #4a5568;
+}
+
+.form-check-label a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.form-check-label a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Алерты */
+.alert {
+    border-radius: 16px;
+    border: none;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(10px);
+}
+
+.alert-success {
+    background: rgba(72, 187, 120, 0.1);
+    color: #2f855a;
+    border: 1px solid rgba(72, 187, 120, 0.2);
+}
+
+.alert-danger {
+    background: rgba(245, 101, 101, 0.1);
+    color: #c53030;
+    border: 1px solid rgba(245, 101, 101, 0.2);
+}
+
+.alert-warning {
+    background: rgba(237, 137, 54, 0.1);
+    color: #dd6b20;
+    border: 1px solid rgba(237, 137, 54, 0.2);
+}
+
+/* Валидация */
+.invalid-feedback {
+    font-size: 13px;
+    margin-top: 6px;
+    color: #e53e3e;
+    display: block;
+}
+
+.was-validated .form-control:invalid {
+    border-color: #e53e3e;
+    background: rgba(245, 101, 101, 0.05);
+}
+
+.was-validated .form-control:valid {
+    border-color: #48bb78;
+    background: rgba(72, 187, 120, 0.05);
+}
+
+/* Индикатор силы пароля */
+.password-strength {
+    margin-top: 12px;
+    display: none;
+}
+
+.strength-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.strength-fill {
+    height: 100%;
+    transition: all 0.4s ease;
+    border-radius: 3px;
+}
+
+.strength-weak { 
+    background: linear-gradient(90deg, #f56565 0%, #fc8181 100%); 
+    width: 25%; 
+}
+
+.strength-fair { 
+    background: linear-gradient(90deg, #ed8936 0%, #f6ad55 100%); 
+    width: 50%; 
+}
+
+.strength-good { 
+    background: linear-gradient(90deg, #38b2ac 0%, #4fd1c7 100%); 
+    width: 75%; 
+}
+
+.strength-strong { 
+    background: linear-gradient(90deg, #48bb78 0%, #68d391 100%); 
+    width: 100%; 
+}
+
+.strength-text {
+    font-size: 12px;
+    color: #718096;
+}
+
+/* Спиннер загрузки */
+.loading-spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Переключение между формами */
+.auth-switch {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.auth-switch p {
+    color: #718096;
+    margin: 0;
+}
+
+.auth-switch a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.auth-switch a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Забыли пароль */
+.forgot-password {
+    text-align: center;
+    margin: 16px 0;
+}
+
+.forgot-password a {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.forgot-password a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Анимации */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes fadeOutScale {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .auth-modal-content {
+        padding: 24px 20px;
+        margin: 20px;
+        border-radius: 20px;
+        max-width: none;
+        width: calc(100% - 40px);
+    }
+    
+    .auth-modal-header {
+        margin-bottom: 24px;
+        padding-right: 40px;
+    }
+    
+    .auth-modal-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .form-control {
+        padding: 12px 16px;
+        font-size: 16px; /* Предотвращает зум на iOS */
+    }
+    
+    .input-group-text {
+        padding: 12px 14px;
+        min-width: 50px;
+    }
+    
+    .btn-auth {
+        padding: 14px 24px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+}
+
+/* Дополнительные эффекты для улучшенного UX */
+.form-control:focus {
+    animation: focusPulse 0.6s ease-out;
+}
+
+@keyframes focusPulse {
+    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+}
+
+/* Улучшенные стили для select */
+select.form-control {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 16px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 48px;
+    appearance: none;
+}
+
+/* Стили для темной темы */
+@media (prefers-color-scheme: dark) {
+    .auth-modal-content {
+        background: linear-gradient(145deg, #1a202c 0%, #2d3748 100%);
+        color: #f7fafc;
+    }
+    
+    .auth-modal-header h2 {
+        color: #f7fafc;
+    }
+    
+    .auth-modal-header p {
+        color: #a0aec0;
+    }
+    
+    .form-control {
+        background: rgba(45, 55, 72, 0.8);
+        border-color: #4a5568;
+        color: #f7fafc;
+    }
+    
+    .form-control:focus {
+        background: rgba(45, 55, 72, 0.95);
+        border-color: #667eea;
+    }
+    
+    .input-group-text {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        border-color: #4a5568;
+        color: #a0aec0;
+    }
+    
+    .form-check-label {
+        color: #e2e8f0;
+    }
+}
