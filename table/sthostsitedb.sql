@@ -793,6 +793,42 @@ LOCK TABLES `news` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `newsletter_stats`
+--
+
+DROP TABLE IF EXISTS `newsletter_stats`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `newsletter_stats` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `campaign_id` int(11) NOT NULL,
+  `subscriber_id` int(11) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `status` enum('sent','delivered','opened','clicked','bounced','unsubscribed') NOT NULL,
+  `opened_at` datetime DEFAULT NULL,
+  `clicked_at` datetime DEFAULT NULL,
+  `bounce_reason` text DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `campaign_id` (`campaign_id`),
+  KEY `subscriber_id` (`subscriber_id`),
+  KEY `email` (`email`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `newsletter_stats`
+--
+
+LOCK TABLES `newsletter_stats` WRITE;
+/*!40000 ALTER TABLE `newsletter_stats` DISABLE KEYS */;
+/*!40000 ALTER TABLE `newsletter_stats` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `newsletter_subscribers`
 --
 
@@ -817,6 +853,39 @@ CREATE TABLE `newsletter_subscribers` (
 LOCK TABLES `newsletter_subscribers` WRITE;
 /*!40000 ALTER TABLE `newsletter_subscribers` DISABLE KEYS */;
 /*!40000 ALTER TABLE `newsletter_subscribers` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `newsletter_templates`
+--
+
+DROP TABLE IF EXISTS `newsletter_templates`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `newsletter_templates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `subject_template` varchar(255) DEFAULT NULL,
+  `html_content` longtext NOT NULL,
+  `text_content` longtext DEFAULT NULL,
+  `variables` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`variables`)),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
+  KEY `is_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `newsletter_templates`
+--
+
+LOCK TABLES `newsletter_templates` WRITE;
+/*!40000 ALTER TABLE `newsletter_templates` DISABLE KEYS */;
+/*!40000 ALTER TABLE `newsletter_templates` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -903,7 +972,7 @@ CREATE TABLE `remember_tokens` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_expires` (`expires_at`),
   CONSTRAINT `remember_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -912,6 +981,13 @@ CREATE TABLE `remember_tokens` (
 
 LOCK TABLES `remember_tokens` WRITE;
 /*!40000 ALTER TABLE `remember_tokens` DISABLE KEYS */;
+INSERT INTO `remember_tokens` VALUES
+(1,1,'7d5fabfbb7ebd4a0eb3f4293aaf760a54f3ecc0787278c80452db8d8ad1c8cb1','2025-08-17 09:04:42','2025-09-16 09:04:42'),
+(2,1,'9885cc764e13ad1a59b3c7bd2a464a683558598fd503b2b430d3d98c7f334750','2025-08-17 09:04:42','2025-09-16 09:04:42'),
+(3,1,'a0f779ff0f9a7bc89b15fff181b3280cdd4e15691aa55afb37b1b8e9c773633b','2025-08-17 09:09:18','2025-09-16 09:09:18'),
+(5,1,'ce887f8d7e2bbf6875c03054f7b7e7c675fc20f1dd370e073cca75d7e48cf78a','2025-08-17 09:21:33','2025-09-16 09:21:33'),
+(7,1,'36b47fadcf9960b9f29cebc6524d1beb63111471bc2c543d8926f7d85d24d1cd','2025-08-17 09:28:01','2025-09-16 09:28:01'),
+(9,1,'93955681777ddefbeaee44176c0285c570d084a8d9f4f881010aec3f8b8f1c96','2025-08-17 09:56:01','2025-09-16 09:56:01');
 /*!40000 ALTER TABLE `remember_tokens` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -936,7 +1012,7 @@ CREATE TABLE `security_logs` (
   KEY `idx_action` (`action`),
   KEY `idx_severity` (`severity`),
   KEY `idx_created` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -948,7 +1024,115 @@ LOCK TABLES `security_logs` WRITE;
 INSERT INTO `security_logs` VALUES
 (1,'104.197.69.115',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-04 14:56:55'),
 (2,'93.170.44.119',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-06 10:34:46'),
-(3,'93.170.44.119',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-06 10:34:51');
+(3,'93.170.44.119',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-06 10:34:51'),
+(4,'93.170.44.31',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:01:42'),
+(5,'93.170.44.31',1,'user_registration','Успішна реєстрація користувача. FOSSBilling ID: , ISPManager: помилка','low','2025-08-17 09:01:42'),
+(6,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:01:42'),
+(7,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:01:44'),
+(8,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:01:58'),
+(9,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:04:42'),
+(10,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:04:42'),
+(11,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:04:42'),
+(12,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:04:42'),
+(13,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:04:43'),
+(14,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:04:58'),
+(15,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:05:47'),
+(16,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:09:18'),
+(17,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:09:18'),
+(18,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:09:18'),
+(19,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:09:18'),
+(20,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:09:19'),
+(21,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:09:19'),
+(22,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:19:33'),
+(23,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:18'),
+(24,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:19'),
+(25,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:22'),
+(26,'93.170.44.31',1,'user_logout','Користувач вийшов з системи','low','2025-08-17 09:21:22'),
+(27,'93.170.44.31',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:33'),
+(28,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:21:33'),
+(29,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:33'),
+(30,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:21:33'),
+(31,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:34'),
+(32,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:21:47'),
+(33,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:22:00'),
+(34,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:23:45'),
+(35,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:25:34'),
+(36,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:25:41'),
+(37,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:26:21'),
+(38,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:26:25'),
+(39,'93.170.44.31',1,'user_logout','Користувач вийшов з системи','low','2025-08-17 09:26:25'),
+(40,'93.170.44.31',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:28:01'),
+(41,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:28:01'),
+(42,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:28:01'),
+(43,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:28:01'),
+(44,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:28:02'),
+(45,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:32:21'),
+(46,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:32:24'),
+(47,'93.170.44.31',1,'user_logout','Користувач вийшов з системи','low','2025-08-17 09:32:24'),
+(48,'93.170.44.31',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:01'),
+(49,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:56:01'),
+(50,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:01'),
+(51,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 09:56:01'),
+(52,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:02'),
+(53,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:03'),
+(54,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:11'),
+(55,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:44'),
+(56,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:46'),
+(57,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:48'),
+(58,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:50'),
+(59,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 09:56:55'),
+(60,'93.170.44.31',1,'user_logout','Користувач вийшов з системи','low','2025-08-17 09:56:55'),
+(61,'46.250.30.31',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:12:07'),
+(62,'46.250.30.31',2,'user_registration','Успішна реєстрація користувача. FOSSBilling ID: , ISPManager: помилка','low','2025-08-17 13:12:07'),
+(63,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:12:07'),
+(64,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:12:09'),
+(65,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:17:50'),
+(66,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:18:19'),
+(67,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:18:43'),
+(68,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:19:08'),
+(69,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:19:40'),
+(70,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:20:28'),
+(71,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:20:30'),
+(72,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:21:22'),
+(73,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:21:26'),
+(74,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:21:29'),
+(75,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:21:31'),
+(76,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:21:58'),
+(77,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:21:59'),
+(78,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:22:06'),
+(79,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:22:10'),
+(80,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:22:12'),
+(81,'46.250.30.31',2,'database_connect','Успешное подключение к основной БД','low','2025-08-17 13:23:50'),
+(82,'93.170.44.31',NULL,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:09:52'),
+(83,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 14:09:53'),
+(84,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:09:53'),
+(85,'93.170.44.31',1,'user_login','Успішний вхід в систему','low','2025-08-17 14:09:53'),
+(86,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:09:54'),
+(87,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:09:55'),
+(88,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:10:52'),
+(89,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:11:33'),
+(90,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:27:34'),
+(91,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:27:37'),
+(92,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:27:45'),
+(93,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:28:58'),
+(94,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:30:51'),
+(95,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:31:05'),
+(96,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:31:20'),
+(97,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:31:29'),
+(98,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:04'),
+(99,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:05'),
+(100,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:07'),
+(101,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:13'),
+(102,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:22'),
+(103,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:26'),
+(104,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:33'),
+(105,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:35'),
+(106,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:33:40'),
+(107,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:35:05'),
+(108,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 14:35:06'),
+(109,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 16:16:18'),
+(110,'93.170.44.31',1,'database_connect','Успешное подключение к основной БД','low','2025-08-17 16:16:26'),
+(111,'93.170.44.31',1,'user_logout','Користувач вийшов з системи','low','2025-08-17 16:16:26');
 /*!40000 ALTER TABLE `security_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1225,6 +1409,10 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
+  `email_verified` tinyint(1) DEFAULT 0,
+  `avatar` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `language` enum('ua','en','ru') DEFAULT 'ua',
   `registration_date` timestamp NULL DEFAULT current_timestamp(),
   `last_login` timestamp NULL DEFAULT NULL,
@@ -1238,7 +1426,7 @@ CREATE TABLE `users` (
   KEY `idx_active` (`is_active`),
   KEY `idx_users_email_active` (`email`,`is_active`),
   KEY `idx_users_registration_date` (`registration_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1247,6 +1435,9 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES
+(1,'dncdante@isi.gov.ua','$2y$10$JaakHvsDvWZRCXjpRpwgCeTEtqbcJptvO7gw8QJANT5DETakeVp1C','Олександр тостер','+380930253941',0,'/uploads/avatars/avatar_1_1755441051.webp','2025-08-17 14:28:58','2025-08-17 14:33:04','ua','2025-08-17 09:01:42','2025-08-17 14:09:53',1,1,NULL,NULL),
+(2,'slavka.sich@gmail.com','$2y$10$0rPiOzQR6JIslpxXa50xCefEckmg2OVkBQ9mgVfmV7d40HTDtpGEm','Яков','+380974639515',0,NULL,'2025-08-17 14:28:58','2025-08-17 14:28:58','ru','2025-08-17 13:12:07',NULL,1,0,NULL,NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1374,4 +1565,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-17 11:45:57
+-- Dump completed on 2025-08-18 11:08:15
