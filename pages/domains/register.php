@@ -8,13 +8,17 @@ $page_title = 'Реєстрація доменів - StormHosting UA | Купи�
 $meta_description = 'Реєстрація доменів .ua, .com.ua, .kiev.ua, .pp.ua та інших. Найкращі ціни на домени в Україні. Миттєва активація, безкоштовне керування DNS.';
 $meta_keywords = 'реєстрація доменів .ua, домен .com.ua, домен .kiev.ua, домен .pp.ua, дешеві домени україна, купити домен';
 
+require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/db_connect.php';
+include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
+
 // Додаткові CSS та JS файли для цієї сторінки
 $additional_css = [
-    '/assets/css/pages/domains-register.css'
+    '/assets/css/pages/domains-register-2.css'
 ];
 
 $additional_js = [
-    '/assets/js/domains-register.js'
+    '/assets/js/domains-register-2.js'
 ];
 
 // Підключення конфігурації та БД
@@ -237,9 +241,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
 }
 
 // Підключення header
-include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
+//include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
 ?>
-
+<link rel="stylesheet" href="/assets/css/pages/domains-register-2.css">
 <!-- Domain Search Hero -->
 <section class="domain-hero">
     <div class="container">

@@ -30,13 +30,13 @@ $page_keywords = "скарги пропозиції, зворотний зв'я�
 $canonical_url = "https://sthost.pro/pages/info/complaints";
 
 // Додаткові CSS та JS файли для цієї сторінки
-$additional_css = [
-    '/assets/css/pages/info-complaints.css?v=' . filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/pages/info-complaints.css')
-];
-
-$additional_js = [
-    '/assets/js/info-complaints.js'
-];
+//$additional_css = [
+//    '/assets/css/pages/info-complaints.css?v=' . filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/pages/info-complaints.css')
+//];
+//
+//$additional_js = [
+//    '/assets/js/info-complaints.js'
+//];
 
 // Підключення конфігурації та БД
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
@@ -122,16 +122,7 @@ function send_complaint_notification($data, $id) {
 // Підключення header
 include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
 ?>
-
-<div class="breadcrumbs">
-    <div class="container">
-        <a href="/" class="breadcrumb-link">Головна</a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="/pages/info" class="breadcrumb-link">Інформація</a>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">Скарги і пропозиції</span>
-    </div>
-</div>
+<link rel="stylesheet" href="/assets/css/pages/info-complaints.css">
 
 <main class="main-content">
     <!-- Hero Section -->
@@ -577,5 +568,5 @@ include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
         </div>
     </section>
 </main>
-
+<script src="/assets/js/info-complaints.js"></script>
 <?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/footer.php'; ?>

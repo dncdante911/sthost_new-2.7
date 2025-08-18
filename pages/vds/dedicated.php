@@ -9,17 +9,17 @@ $meta_description = 'Потужні виділені сервери в Укра�
 $meta_keywords = 'виділений сервер, dedicated server, фізичний сервер, bare metal, колокація';
 
 // Додаткові CSS та JS файли для цієї сторінки
-$additional_css = [
-    '/assets/css/pages/vds-dedicated.css'
-];
-
-$additional_js = [
-    '/assets/js/pages/vds-dedicated.js'
-];
+//$additional_css = [
+//    '/assets/css/pages/vds-dedicated.css'
+//];
+//
+//$additional_js = [
+//    '/assets/js/pages/vds-dedicated.js'
+//];
 
 // Безпечне підключення конфігурації та БД
 $config_loaded = false;
-$db_connected = false;
+$db_connected = faLSE;
 
 try {
     $config_path = $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
@@ -247,7 +247,7 @@ try {
 // Fallback header якщо основний не завантажився
 if (!$header_loaded) {
     ?>
-    <!DOCTYPE html>
+        <!DOCTYPE html>
     <html lang="uk">
     <head>
         <meta charset="UTF-8">
@@ -260,11 +260,8 @@ if (!$header_loaded) {
         <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
         
         <!-- Custom CSS -->
-        <?php if (isset($additional_css) && is_array($additional_css)): ?>
-            <?php foreach ($additional_css as $css_file): ?>
-                <link rel="stylesheet" href="<?php echo htmlspecialchars($css_file); ?>">
-            <?php endforeach; ?>
-        <?php endif; ?>
+        <link href="/assets/css/pages/vds-dedicated.css" rel="stylesheet">
+        
     </head>
     <body>
         <!-- Простой header -->
@@ -1076,6 +1073,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
+<script src="/assets/js/vds-dedicated.js"></script>
 </body>
 </html>

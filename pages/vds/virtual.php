@@ -37,13 +37,13 @@ $meta_description = 'Віртуальні приватні сервери VPS/VD
 $meta_keywords = 'vps, vds, віртуальний сервер, kvm, ssd vps, root доступ';
 
 // Додаткові CSS та JS файли
-$additional_css = [
-    '/assets/css/pages/vds-virtual.css'
-];
-
-$additional_js = [
-    '/assets/js/pages/vds-virtual.js'
-];
+//$additional_css = [
+//    '/assets/css/pages/vds-virtual.css'
+//];
+//
+//$additional_js = [
+//    '/assets/js/pages/vds-virtual.js'
+//];
 
 // Fallback дані для VPS планів
 $vps_plans = [
@@ -125,7 +125,7 @@ try {
     // Ігноруємо помилки включення файлів
 }
 ?>
-
+<link rel="stylesheet" href="/assets/css/pages/vds-virtual.css">
 <!-- VPS Hero Section -->
 <section class="vps-hero">
     <div class="container">
@@ -672,6 +672,8 @@ try {
         <script src="<?php echo htmlspecialchars($js_file); ?>"></script>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<script src="assets/js/vds-virtual.js"></script>
 
 <?php 
 // Підключення footer якщо файл існує

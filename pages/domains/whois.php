@@ -155,7 +155,7 @@ function performWhoisLookup($domain, $whois_server) {
     <!-- Main CSS -->
     <link rel="stylesheet" href="../../assets/css/main.css">
     <!-- Calculator CSS -->
-     <link rel="stylesheet" href="../../assets/css/pages/domains.css">
+     <link rel="stylesheet" href="/assets/css/pages/domains2.css">
 </head>
 
 <!-- WHOIS Hero -->

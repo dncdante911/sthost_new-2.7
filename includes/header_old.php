@@ -4,11 +4,6 @@ if (!defined('SECURE_ACCESS')) {
     die('Direct access not permitted');
 }
 
-// Проверяем авторизацию пользователя
-$user_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
-$user_name = $_SESSION['user_name'] ?? '';
-$user_email = $_SESSION['user_email'] ?? '';
-
 // Определяем текущую страницу для активных состояний
 $current_page = $_SERVER['REQUEST_URI'];
 $page_parts = explode('/', trim($current_page, '/'));
@@ -28,9 +23,16 @@ $page = $page_parts[1] ?? '';
     
     <!-- Modal Auth CSS -->
     <link rel="stylesheet" href="/assets/css/pages/modal-auth.css">
-   
+    
+    <!-- Дополнительные CSS файлы -->
+    <?php if (isset($additional_css) && is_array($additional_css)): ?>
+        <?php foreach ($additional_css as $css_file): ?>
+            <link rel="stylesheet" href="<?php echo htmlspecialchars($css_file); ?>">
+        <?php endforeach; ?>
+    <?php endif; ?>
 
-<style>
+    <!-- Встроенные стили для хедера -->
+    <style>
         :root {
             --primary-color: #3b82f6;
             --primary-hover: #2563eb;
@@ -114,7 +116,6 @@ $page = $page_parts[1] ?? '';
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.9rem;
         }
 
         .btn-login {
@@ -142,42 +143,6 @@ $page = $page_parts[1] ?? '';
             border-color: white;
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-logout {
-            color: white;
-            border-color: rgba(255, 255, 255, 0.3);
-            background: transparent;
-        }
-
-        .btn-logout:hover {
-            color: #dc3545;
-            background: white;
-            border-color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* User Info */
-        .user-info {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.9rem;
-            margin-right: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.8rem;
         }
 
         /* Menu Toggle Button */
@@ -413,12 +378,6 @@ $page = $page_parts[1] ?? '';
                 padding: 0.5rem 0.75rem;
                 font-size: 0.875rem;
             }
-
-            .user-info {
-                flex-direction: column;
-                align-items: flex-end;
-                margin-right: 0.5rem;
-            }
         }
 
         @media (min-width: 769px) {
@@ -426,8 +385,7 @@ $page = $page_parts[1] ?? '';
                 margin-left: 1rem;
             }
         }
-</style>
- 
+    </style>
 </head>
 <body>
     <!-- Main Header -->
@@ -436,7 +394,7 @@ $page = $page_parts[1] ?? '';
             <div class="container">
                 <!-- Brand Logo -->
                 <a class="navbar-brand" href="/">
-                    <img src="/assets/images/Black.png" class="brand-logo">
+                    <img src="/assets/images/logos/logo.svg" alt="StormHosting UA" class="brand-logo">
                     <span>StormHosting UA</span>
                 </a>
 
@@ -456,42 +414,17 @@ $page = $page_parts[1] ?? '';
 
                 <!-- Auth Buttons & Menu Toggle -->
                 <div class="d-flex align-items-center">
-                    <?php if ($user_logged_in): ?>
-                        <!-- Информация о пользователе -->
-                        <div class="user-info d-none d-sm-flex">
-                            <div class="user-avatar">
-                                <?php echo strtoupper(substr($user_name, 0, 1)); ?>
-                            </div>
-                            <div>
-                                <div style="font-weight: 600; font-size: 0.85rem;">
-                                    <?php echo htmlspecialchars($user_name); ?>
-                                </div>
-                                <div style="font-size: 0.75rem; opacity: 0.8;">
-                                    <?php echo htmlspecialchars($user_email); ?>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Кнопка выхода -->
-                        <div class="auth-buttons me-3">
-                            <a href="/auth/logout.php" class="btn-auth-header btn-logout" onclick="return confirm('Ви впевнені, що хочете вийти?')">
-                                <i class="bi bi-box-arrow-right"></i>
-                                Вийти
-                            </a>
-                        </div>
-                    <?php else: ?>
-                        <!-- Кнопки авторизации для неавторизованных -->
-                        <div class="auth-buttons me-3">
-                            <a href="#" class="btn-auth-header btn-login" data-open-login>
-                                <i class="bi bi-box-arrow-in-right"></i>
-                                Вхід
-                            </a>
-                            <a href="#" class="btn-auth-header btn-register" data-open-register>
-                                <i class="bi bi-person-plus"></i>
-                                Реєстрація
-                            </a>
-                        </div>
-                    <?php endif; ?>
+                    <!-- Auth Buttons -->
+                    <div class="auth-buttons me-3">
+                        <a href="#" class="btn-auth-header btn-login" data-open-login>
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Вхід
+                        </a>
+                        <a href="#" class="btn-auth-header btn-register" data-open-register>
+                            <i class="bi bi-person-plus"></i>
+                            Реєстрація
+                        </a>
+                    </div>
 
                     <!-- Menu Toggle Button -->
                     <button type="button" class="menu-toggle" id="menuToggle">
@@ -511,51 +444,12 @@ $page = $page_parts[1] ?? '';
     <div class="slide-menu" id="slideMenu">
         <div class="menu-header">
             <h3>Навігація</h3>
-            <?php if ($user_logged_in): ?>
-                <div class="d-sm-none mt-2" style="font-size: 0.9rem; opacity: 0.9;">
-                    <i class="bi bi-person-circle me-1"></i>
-                    <?php echo htmlspecialchars($user_name); ?>
-                </div>
-            <?php endif; ?>
             <button type="button" class="menu-close" id="menuClose">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
 
         <div class="menu-content">
-            <?php if ($user_logged_in): ?>
-                <!-- Панель пользователя в меню -->
-                <div class="menu-section">
-                    <div class="menu-section-title">
-                        <i class="bi bi-person-circle"></i>
-                        <span>Мій кабінет</span>
-                    </div>
-                    <div class="menu-items show">
-                        <a href="/client/dashboard.php" class="menu-item">
-                            <i class="bi bi-speedometer2"></i>
-                            <div class="menu-item-content">
-                                <div class="menu-item-title">Панель управління</div>
-                                <div class="menu-item-desc">Головна сторінка кабінету</div>
-                            </div>
-                        </a>
-                        <a href="/client/profile.php" class="menu-item">
-                            <i class="bi bi-person-gear"></i>
-                            <div class="menu-item-content">
-                                <div class="menu-item-title">Налаштування профілю</div>
-                                <div class="menu-item-desc">Редагування даних</div>
-                            </div>
-                        </a>
-                        <a href="/auth/logout.php" class="menu-item" onclick="return confirm('Ви впевнені, що хочете вийти?')">
-                            <i class="bi bi-box-arrow-right"></i>
-                            <div class="menu-item-content">
-                                <div class="menu-item-title">Вийти з системи</div>
-                                <div class="menu-item-desc">Завершити сеанс</div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            <?php endif; ?>
-
             <!-- Domains Section -->
             <div class="menu-section">
                 <div class="menu-section-title" onclick="toggleMenuSection('domains')">
@@ -695,6 +589,20 @@ $page = $page_parts[1] ?? '';
                             <div class="menu-item-desc">Геолокація та безпека</div>
                         </div>
                     </a>
+                    <a href="/pages/tools/http-headers.php" class="menu-item">
+                        <i class="bi bi-code-square"></i>
+                        <div class="menu-item-content">
+                            <div class="menu-item-title">HTTP заголовки</div>
+                            <div class="menu-item-desc">Аналіз заголовків</div>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/site-info.php" class="menu-item">
+                        <i class="bi bi-info-circle"></i>
+                        <div class="menu-item-content">
+                            <div class="menu-item-title">Інформація про сайт</div>
+                            <div class="menu-item-desc">Технічні дані</div>
+                        </div>
+                    </a>
                 </div>
             </div>
 
@@ -802,10 +710,8 @@ $page = $page_parts[1] ?? '';
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Modal Auth JS (только для неавторизованных пользователей) -->
-    <?php if (!$user_logged_in): ?>
-        <script src="/assets/js/modal-auth.js"></script>
-    <?php endif; ?>
+    <!-- Modal Auth JS -->
+    <script src="/assets/js/modal-auth.js"></script>
 
     <!-- Header JavaScript -->
     <script>
@@ -842,12 +748,10 @@ $page = $page_parts[1] ?? '';
                 }
             });
 
-            // Initialize Auth Modal only for non-logged users
-            <?php if (!$user_logged_in): ?>
-                if (typeof AuthModal !== 'undefined') {
-                    window.authModal = new AuthModal();
-                }
-            <?php endif; ?>
+            // Initialize Auth Modal
+            if (typeof AuthModal !== 'undefined') {
+                window.authModal = new AuthModal();
+            }
         });
 
         // Toggle menu sections
@@ -862,7 +766,7 @@ $page = $page_parts[1] ?? '';
             } else {
                 // Close all other sections
                 document.querySelectorAll('.menu-items.show').forEach(item => {
-                    if (item.id !== sectionId + '-items' && !item.closest('.menu-section').querySelector('.menu-section-title').textContent.includes('Контакти') && !item.closest('.menu-section').querySelector('.menu-section-title').textContent.includes('Мій кабінет')) {
+                    if (item.id !== sectionId + '-items') {
                         item.classList.remove('show');
                     }
                 });

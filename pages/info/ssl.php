@@ -30,13 +30,13 @@ $page_keywords = "ssl сертифікати україна, https сертиф�
 $canonical_url = "https://sthost.pro/pages/info/ssl";
 
 // Додаткові CSS та JS файли для цієї сторінки
-$additional_css = [
-    '/assets/css/pages/info-ssl.css?v=' . filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/pages/info-ssl.css')
-];
-
-$additional_js = [
-    '/assets/js/info-ssl.js'
-];
+//$additional_css = [
+//    '/assets/css/pages/info-ssl.css?v=' . filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/pages/info-ssl.css')
+//];
+//
+//$additional_js = [
+//   '/assets/js/info-ssl.js'
+//];
 
 // Підключення конфігурації та БД
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
@@ -76,16 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Підключення header
 include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
 ?>
-
-<div class="breadcrumbs">
-    <div class="container">
-        <a href="/" class="breadcrumb-link">Головна</a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="/pages/info" class="breadcrumb-link">Інформація</a>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">SSL Сертифікати</span>
-    </div>
-</div>
+<link rel="stylesheet" href="/assets/css/pages/info-ssl.css">
 
 <main class="main-content">
     <!-- Hero Section -->
@@ -1115,5 +1106,5 @@ include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
         </div>
     </div>
 </div>
-
+<script src="/assets/js/info-ssl.js"></script>
 <?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/footer.php'; ?>

@@ -30,13 +30,13 @@ $page_keywords = "контакти, телефон, адреса, офіс дн�
 $canonical_url = "https://sthost.pro/pages/contacts";
 
 // Додаткові CSS та JS файли для цієї сторінки
-$additional_css = [
-    '/assets/css/pages/contacts.css?v=' . filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/pages/contacts.css')
-];
-
-$additional_js = [
-    '/assets/js/contacts.js'
-];
+//$additional_css = [
+//    '/assets/css/pages/contacts.css?v=' . filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/pages/contacts.css')
+//];
+//
+//$additional_js = [
+//    '/assets/js/contacts.js'
+//];
 
 // Підключення конфігурації та БД
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
@@ -168,14 +168,7 @@ function send_contact_notification($data, $id) {
 // Підключення header
 include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
 ?>
-
-<div class="breadcrumbs">
-    <div class="container">
-        <a href="/" class="breadcrumb-link">Головна</a>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">Контакти</span>
-    </div>
-</div>
+<link rel="stylesheet" href="/assets/css/pages/contacts.css">
 
 <main class="main-content">
     <!-- Hero Section -->
@@ -602,5 +595,5 @@ include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
         </div>
     </section>
 </main>
-
+<script src="/assets/js/contacts.js"></script>
 <?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/footer.php'; ?>

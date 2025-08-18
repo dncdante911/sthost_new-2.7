@@ -254,62 +254,6 @@ switch($page) {
         }
         exit;
         
-    // Хостинг страницы
-    case 'hosting':
-        $page_css = 'hosting';
-        $page_title = 'Хостинг послуги - StormHosting UA';
-        include 'pages/hosting.php';
-        break;
-        
-    case 'shared':
-        $page_css = 'hosting';
-        $page_title = 'Віртуальний хостинг - StormHosting UA';
-        include 'pages/shared.php';
-        break;
-        
-    case 'cloud':
-        $page_css = 'hosting';
-        $page_title = 'Хмарний хостинг - StormHosting UA';
-        include 'pages/cloud.php';
-        break;
-        
-    case 'reseller':
-        $page_css = 'hosting';
-        $page_title = 'Реселер хостинг - StormHosting UA';
-        include 'pages/reseller.php';
-        break;
-        
-    // Доменные страницы
-    case 'domains':
-        $page_css = 'domains';
-        $page_title = 'Домени - StormHosting UA';
-        include 'pages/domains.php';
-        break;
-        
-    case 'register':
-        $page_css = 'domains';
-        $page_title = 'Реєстрація доменів - StormHosting UA';
-        include 'pages/register.php';
-        break;
-        
-    case 'whois':
-        $page_css = 'domains';
-        $page_title = 'WHOIS перевірка - StormHosting UA';
-        include 'pages/whois.php';
-        break;
-        
-    case 'transfer':
-        $page_css = 'domains';
-        $page_title = 'Трансфер доменів - StormHosting UA';
-        include 'pages/transfer.php';
-        break;
-        
-    case 'dns':
-        $page_css = 'domains';
-        $page_title = 'DNS перевірка - StormHosting UA';
-        include 'pages/dns.php';
-        break;
-        
     case 'home':
     case '':
     default:

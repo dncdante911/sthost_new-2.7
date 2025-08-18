@@ -20,7 +20,7 @@ $additional_js = [
 // Підключення конфігурації та БД
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/db_connect.php';
-
+include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
 // Функції-заглушки якщо не визначені
 if (!function_exists('t')) {
     function t($key, $def = '') { 
@@ -107,9 +107,13 @@ $recent_domains = [
 ];
 
 // Підключення header
-include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
-?>
 
+?>
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <!-- Calculator CSS -->
+     <link rel="stylesheet" href="/assets/css/pages/domains2.css">
+     
 <!-- Domains Hero -->
 <section class="domain-hero py-5">
     <div class="container">

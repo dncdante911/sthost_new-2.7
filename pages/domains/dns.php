@@ -229,9 +229,11 @@ function performDNSLookup($domain, $record_type) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
     <!-- Main CSS -->
-    <link rel="stylesheet" href="../../assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/home.css">
     <!-- Calculator CSS -->
-     <link rel="stylesheet" href="../../assets/css/pages/domains2.css">
+    <link rel="stylesheet" href="/assets/css/pages/domains2.css">
+     
+     
 </head>
 
 <!-- DNS Hero -->
