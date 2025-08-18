@@ -7,19 +7,55 @@
 class AuthModal {
     constructor() {
         this.currentModal = null;
+        this.csrfToken = null;
         this.init();
     }
 
     init() {
         this.createModals();
         this.bindEvents();
+        this.loadCSRFToken();
         console.log('AuthModal initialized');
+    }
+
+    /**
+     * Загрузка CSRF токена
+     */
+    async loadCSRFToken() {
+        try {
+            const response = await fetch('/api/get-csrf-token.php');
+            const data = await response.json();
+            
+            if (data.success && data.csrf_token) {
+                this.csrfToken = data.csrf_token;
+                this.updateCSRFTokens();
+            }
+        } catch (error) {
+            console.error('Failed to load CSRF token:', error);
+        }
+    }
+
+    /**
+     * Обновление CSRF токенов в формах
+     */
+    updateCSRFTokens() {
+        if (!this.csrfToken) return;
+        
+        const tokenInputs = document.querySelectorAll('input[name="csrf_token"]');
+        tokenInputs.forEach(input => {
+            input.value = this.csrfToken;
+        });
     }
 
     /**
      * Создание HTML модальных окон
      */
     createModals() {
+        // Проверяем, не существуют ли уже модальные окна
+        if (document.getElementById('authModals')) {
+            return;
+        }
+
         // Создаем контейнер для модальных окон
         const modalContainer = document.createElement('div');
         modalContainer.id = 'authModals';
@@ -54,12 +90,18 @@ class AuthModal {
                             <label for="reg_full_name" class="form-label">
                                 <i class="bi bi-person"></i>Повне ім'я
                             </label>
-                            <input type="text" 
-                                   id="reg_full_name" 
-                                   name="full_name" 
-                                   class="form-control" 
-                                   placeholder="Введіть ваше повне ім'я"
-                                   required>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" 
+                                       id="reg_full_name" 
+                                       name="full_name" 
+                                       class="form-control" 
+                                       placeholder="Введіть ваше повне ім'я"
+                                       required
+                                       autocomplete="name">
+                            </div>
                             <div class="invalid-feedback"></div>
                         </div>
                         
@@ -67,18 +109,24 @@ class AuthModal {
                             <label for="reg_email" class="form-label">
                                 <i class="bi bi-envelope"></i>Email адреса
                             </label>
-                            <input type="email" 
-                                   id="reg_email" 
-                                   name="email" 
-                                   class="form-control" 
-                                   placeholder="Введіть ваш email"
-                                   required>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" 
+                                       id="reg_email" 
+                                       name="email" 
+                                       class="form-control" 
+                                       placeholder="Введіть ваш email"
+                                       required
+                                       autocomplete="email">
+                            </div>
                             <div class="invalid-feedback"></div>
                         </div>
                         
                         <div class="form-group">
                             <label for="reg_phone" class="form-label">
-                                <i class="bi bi-telephone"></i>Номер телефону (опціонально)
+                                <i class="bi bi-telephone"></i>Телефон (опціонально)
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text">
@@ -88,7 +136,8 @@ class AuthModal {
                                        id="reg_phone" 
                                        name="phone" 
                                        class="form-control" 
-                                       placeholder="+380xxxxxxxxx">
+                                       placeholder="+380 67 123 45 67"
+                                       autocomplete="tel">
                             </div>
                             <div class="invalid-feedback"></div>
                         </div>
@@ -106,23 +155,21 @@ class AuthModal {
                                        name="password" 
                                        class="form-control" 
                                        placeholder="Створіть надійний пароль"
-                                       required>
+                                       required
+                                       autocomplete="new-password">
                                 <button type="button" class="btn btn-outline-secondary" data-toggle-password="reg_password">
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>
-                            <div class="password-strength">
-                                <div class="strength-bar">
-                                    <div class="strength-fill"></div>
-                                </div>
-                                <div class="strength-text">Пароль повинен містити мінімум 8 символів, великі і малі літери, цифри</div>
-                            </div>
                             <div class="invalid-feedback"></div>
+                            <div class="form-text">
+                                Мінімум 8 символів, включаючи великі та малі літери, цифри
+                            </div>
                         </div>
                         
                         <div class="form-group">
                             <label for="reg_password_confirm" class="form-label">
-                                <i class="bi bi-lock-fill"></i>Підтвердження паролю
+                                <i class="bi bi-lock-fill"></i>Підтвердіть пароль
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text">
@@ -133,41 +180,29 @@ class AuthModal {
                                        name="password_confirm" 
                                        class="form-control" 
                                        placeholder="Повторіть пароль"
-                                       required>
+                                       required
+                                       autocomplete="new-password">
+                                <button type="button" class="btn btn-outline-secondary" data-toggle-password="reg_password_confirm">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                             </div>
                             <div class="invalid-feedback"></div>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="reg_language" class="form-label">
-                                <i class="bi bi-globe"></i>Мова інтерфейсу
-                            </label>
-                            <select id="reg_language" name="language" class="form-control">
-                                <option value="ua" selected>Українська</option>
-                                <option value="en">English</option>
-                                <option value="ru">Русский</option>
-                            </select>
-                        </div>
-                        
                         <div class="form-check">
-                            <input type="checkbox" id="reg_accept_terms" name="accept_terms" class="form-check-input" required>
-                            <label for="reg_accept_terms" class="form-check-label">
-                                Я приймаю <a href="/pages/info/rules.php" target="_blank">умови використання</a> та 
-                                <a href="/pages/info/legal.php" target="_blank">політику конфіденційності</a>
+                            <input type="checkbox" id="reg_agree_terms" name="agree_terms" class="form-check-input" required>
+                            <label for="reg_agree_terms" class="form-check-label">
+                                Я погоджуюсь з <a href="/pages/info/rules.php" target="_blank">умовами використання</a> 
+                                та <a href="/pages/info/legal.php" target="_blank">політикою конфіденційності</a>
                             </label>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        
-                        <div class="form-check">
-                            <input type="checkbox" id="reg_marketing_emails" name="marketing_emails" class="form-check-input">
-                            <label for="reg_marketing_emails" class="form-check-label">
-                                Я хочу отримувати новини та спеціальні пропозиції на email
-                            </label>
+                            <div class="invalid-feedback">
+                                Необхідно погодитися з умовами використання
+                            </div>
                         </div>
                         
                         <button type="submit" class="btn btn-auth" id="registerSubmitBtn">
                             <div class="spinner-border spinner-border-sm loading-spinner" role="status"></div>
-                            <span class="btn-text">Зареєструватися</span>
+                            <span class="btn-text">Зареєструватись</span>
                         </button>
                     </form>
                     
@@ -267,12 +302,12 @@ class AuthModal {
     bindEvents() {
         // Клик по кнопкам открытия модальных окон
         document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-open-register]')) {
+            if (e.target.matches('[data-open-register]') || e.target.closest('[data-open-register]')) {
                 e.preventDefault();
                 this.openModal('registerModal');
             }
             
-            if (e.target.matches('[data-open-login]')) {
+            if (e.target.matches('[data-open-login]') || e.target.closest('[data-open-login]')) {
                 e.preventDefault();
                 this.openModal('loginModal');
             }
@@ -287,96 +322,62 @@ class AuthModal {
             // Закрытие модальных окон
             if (e.target.matches('[data-close]') || e.target.closest('[data-close]')) {
                 e.preventDefault();
-                const closeBtn = e.target.matches('[data-close]') ? e.target : e.target.closest('[data-close]');
+                const closeBtn = e.target.matches('[data-close]') ? 
+                    e.target : e.target.closest('[data-close]');
                 const modalId = closeBtn.getAttribute('data-close');
                 this.closeModal(modalId);
             }
             
-            // Показать/скрыть пароль
+            // Показ/скрытие пароля
             if (e.target.matches('[data-toggle-password]') || e.target.closest('[data-toggle-password]')) {
                 e.preventDefault();
-                const btn = e.target.matches('[data-toggle-password]') ? e.target : e.target.closest('[data-toggle-password]');
-                const inputId = btn.getAttribute('data-toggle-password');
-                this.togglePassword(inputId);
+                const btn = e.target.matches('[data-toggle-password]') ? 
+                    e.target : e.target.closest('[data-toggle-password]');
+                const targetId = btn.getAttribute('data-toggle-password');
+                this.togglePasswordVisibility(targetId);
+            }
+            
+            // Обработка забытого пароля
+            if (e.target.matches('[data-forgot-password]')) {
+                e.preventDefault();
+                this.handleForgotPassword();
             }
         });
 
-        // Закрытие по клику вне модального окна
+        // Закрытие модального окна по клику на фон
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('auth-modal')) {
                 this.closeModal(e.target.id);
             }
         });
 
-        // Закрытие по Escape
+        // Закрытие модального окна по нажатию ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.currentModal) {
                 this.closeModal(this.currentModal);
             }
         });
 
-        // Обработка форм
-        this.bindFormEvents();
-    }
-
-    /**
-     * Привязка событий форм
-     */
-    bindFormEvents() {
-        // Форма регистрации
-        const registerForm = document.getElementById('registerForm');
-        if (registerForm) {
-            registerForm.addEventListener('submit', (e) => this.handleRegisterSubmit(e));
-            
-            // Проверка силы пароля
-            const passwordInput = document.getElementById('reg_password');
-            if (passwordInput) {
-                passwordInput.addEventListener('input', (e) => this.checkPasswordStrength(e.target));
+        // Привязка обработчиков форм
+        document.addEventListener('submit', (e) => {
+            if (e.target.id === 'registerForm') {
+                this.handleRegisterSubmit(e);
+            } else if (e.target.id === 'loginForm') {
+                this.handleLoginSubmit(e);
             }
-            
-            // Проверка совпадения паролей
-            const passwordConfirm = document.getElementById('reg_password_confirm');
-            if (passwordConfirm) {
-                passwordConfirm.addEventListener('input', () => this.validatePasswordMatch('register'));
+        });
+
+        // Валидация в реальном времени
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('#registerForm')) {
+                this.validateField(e.target);
+                
+                // Специальная проверка для подтверждения пароля
+                if (e.target.name === 'password_confirm' || e.target.name === 'password') {
+                    this.validatePasswordMatch('register');
+                }
             }
-        }
-
-        // Форма входа
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', (e) => this.handleLoginSubmit(e));
-        }
-
-        // Получаем CSRF токен
-        this.updateCSRFTokens();
-    }
-
-    /**
-     * Обновление CSRF токенов
-     */
-    async updateCSRFTokens() {
-        try {
-            const response = await fetch('/api/get-csrf-token.php');
-            const data = await response.json();
-            
-            if (data.success && data.token) {
-                document.querySelector('#registerForm input[name="csrf_token"]').value = data.token;
-                document.querySelector('#loginForm input[name="csrf_token"]').value = data.token;
-            }
-        } catch (error) {
-            console.warn('Could not get CSRF token:', error);
-            // Генерируем простой токен
-            const token = this.generateSimpleToken();
-            document.querySelector('#registerForm input[name="csrf_token"]').value = token;
-            document.querySelector('#loginForm input[name="csrf_token"]').value = token;
-        }
-    }
-
-    /**
-     * Генерация простого токена
-     */
-    generateSimpleToken() {
-        return Math.random().toString(36).substring(2) + Date.now().toString(36);
+        });
     }
 
     /**
@@ -386,19 +387,20 @@ class AuthModal {
         this.closeAllModals();
         
         const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('show');
-            this.currentModal = modalId;
-            document.body.style.overflow = 'hidden';
-            
-            // Фокус на первое поле
-            setTimeout(() => {
-                const firstInput = modal.querySelector('input[type="text"], input[type="email"]');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-            }, 300);
-        }
+        if (!modal) return;
+        
+        this.currentModal = modalId;
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        
+        // Фокус на первое поле ввода
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input:not([type="hidden"])');
+            if (firstInput) firstInput.focus();
+        }, 300);
+        
+        // Обновляем CSRF токены
+        this.updateCSRFTokens();
     }
 
     /**
@@ -406,16 +408,26 @@ class AuthModal {
      */
     closeModal(modalId) {
         const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('show');
-            this.currentModal = null;
-            document.body.style.overflow = '';
-            
-            // Очищаем форму и ошибки
-            setTimeout(() => {
-                this.clearForm(modalId);
-            }, 300);
-        }
+        if (!modal) return;
+        
+        modal.classList.remove('show');
+        this.currentModal = null;
+        document.body.style.overflow = '';
+        
+        // Очищаем форму и ошибки
+        setTimeout(() => {
+            this.resetForm(modalId);
+        }, 300);
+    }
+
+    /**
+     * Переключение между модальными окнами
+     */
+    switchModal(targetModalId) {
+        this.closeAllModals();
+        setTimeout(() => {
+            this.openModal(targetModalId);
+        }, 150);
     }
 
     /**
@@ -431,68 +443,108 @@ class AuthModal {
     }
 
     /**
-     * Переключение между модальными окнами
-     */
-    switchModal(targetModalId) {
-        this.closeAllModals();
-        setTimeout(() => {
-            this.openModal(targetModalId);
-        }, 150);
-    }
-
-    /**
      * Показать/скрыть пароль
      */
-    togglePassword(inputId) {
+    togglePasswordVisibility(inputId) {
         const input = document.getElementById(inputId);
-        const btn = document.querySelector(`[data-toggle-password="${inputId}"]`);
+        const button = document.querySelector(`[data-toggle-password="${inputId}"]`);
         
-        if (input && btn) {
-            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-            input.setAttribute('type', type);
-            
-            const icon = btn.querySelector('i');
-            if (icon) {
-                icon.className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
-            }
+        if (!input || !button) {
+            console.error('Password toggle elements not found:', inputId);
+            return;
         }
+        
+        const icon = button.querySelector('i');
+        if (!icon) {
+            console.error('Icon not found in password toggle button');
+            return;
+        }
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+            button.setAttribute('title', 'Приховати пароль');
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+            button.setAttribute('title', 'Показати пароль');
+        }
+        
+        // Возвращаем фокус на поле ввода
+        input.focus();
     }
 
     /**
-     * Проверка силы пароля
+     * Валидация поля
      */
-    checkPasswordStrength(passwordInput) {
-        const password = passwordInput.value;
-        const strengthBar = document.querySelector('#registerModal .password-strength');
-        const strengthFill = document.querySelector('#registerModal .strength-fill');
-        
-        if (strengthBar) {
-            strengthBar.style.display = password.length > 0 ? 'block' : 'none';
+    validateField(field) {
+        const value = field.value.trim();
+        const name = field.name;
+        let isValid = true;
+        let message = '';
+
+        // Очищаем предыдущие ошибки
+        this.clearFieldError(name, this.getModalIdFromField(field));
+
+        switch (name) {
+            case 'full_name':
+                if (!value) {
+                    isValid = false;
+                    message = 'Вкажіть повне ім\'я';
+                } else if (value.length < 2) {
+                    isValid = false;
+                    message = 'Ім\'я повинно містити мінімум 2 символи';
+                }
+                break;
+
+            case 'email':
+                if (!value) {
+                    isValid = false;
+                    message = 'Вкажіть email адресу';
+                } else if (!this.isValidEmail(value)) {
+                    isValid = false;
+                    message = 'Невірний формат email';
+                }
+                break;
+
+            case 'phone':
+                if (value && !this.isValidPhone(value)) {
+                    isValid = false;
+                    message = 'Невірний формат телефону';
+                }
+                break;
+
+            case 'password':
+                if (!value) {
+                    isValid = false;
+                    message = 'Вкажіть пароль';
+                } else if (value.length < 8) {
+                    isValid = false;
+                    message = 'Пароль повинен містити мінімум 8 символів';
+                } else if (!this.isValidPassword(value)) {
+                    isValid = false;
+                    message = 'Пароль повинен містити великі та малі літери, цифри';
+                }
+                break;
+
+            case 'password_confirm':
+                const passwordField = document.querySelector(`#${field.closest('form').id} input[name="password"]`);
+                if (passwordField && value && value !== passwordField.value) {
+                    isValid = false;
+                    message = 'Паролі не співпадають';
+                }
+                break;
         }
-        
-        if (password.length === 0) return;
-        
-        let strength = 0;
-        
-        // Критерии силы пароля
-        if (password.length >= 8) strength++;
-        if (/[a-z]/.test(password)) strength++;
-        if (/[A-Z]/.test(password)) strength++;
-        if (/\d/.test(password)) strength++;
-        if (/[^a-zA-Z\d]/.test(password)) strength++;
-        
-        // Установка класса силы
-        if (strengthFill) {
-            strengthFill.className = 'strength-fill';
-            if (strength === 1) strengthFill.classList.add('strength-weak');
-            else if (strength === 2) strengthFill.classList.add('strength-fair');
-            else if (strength === 3) strengthFill.classList.add('strength-good');
-            else if (strength >= 4) strengthFill.classList.add('strength-strong');
+
+        if (!isValid) {
+            this.showFieldError(name, message, this.getModalIdFromField(field));
         }
+
+        return isValid;
     }
 
     /**
-     * Проверка совпадения паролей
+     * Валидация совпадения паролей
      */
     validatePasswordMatch(formType) {
         const passwordInput = document.getElementById(`${formType === 'register' ? 'reg' : 'login'}_password`);
@@ -505,6 +557,55 @@ class AuthModal {
                 this.clearFieldError('password_confirm', 'registerModal');
             }
         }
+    }
+
+    /**
+     * Валидация формы регистрации
+     */
+    validateRegisterForm(form) {
+        const formData = new FormData(form);
+        let isValid = true;
+
+        // Проверяем все поля
+        const fields = form.querySelectorAll('input:not([type="hidden"])');
+        fields.forEach(field => {
+            if (!this.validateField(field)) {
+                isValid = false;
+            }
+        });
+
+        // Проверяем согласие с условиями
+        const agreeTerms = form.querySelector('input[name="agree_terms"]');
+        if (!agreeTerms.checked) {
+            this.showFieldError('agree_terms', 'Необхідно погодитися з умовами використання', 'registerModal');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    /**
+     * Валидация формы входа
+     */
+    validateLoginForm(form) {
+        const email = form.querySelector('input[name="email"]').value.trim();
+        const password = form.querySelector('input[name="password"]').value;
+        let isValid = true;
+
+        if (!email) {
+            this.showFieldError('email', 'Вкажіть email адресу', 'loginModal');
+            isValid = false;
+        } else if (!this.isValidEmail(email)) {
+            this.showFieldError('email', 'Невірний формат email', 'loginModal');
+            isValid = false;
+        }
+
+        if (!password) {
+            this.showFieldError('password', 'Вкажіть пароль', 'loginModal');
+            isValid = false;
+        }
+
+        return isValid;
     }
 
     /**
@@ -563,7 +664,7 @@ class AuthModal {
             console.error('Registration error:', error);
             this.showAlert('danger', 'Виникла помилка під час реєстрації. Спробуйте ще раз.', 'registerModal');
         } finally {
-            this.setLoadingState(submitBtn, false, 'Зареєструватися');
+            this.setLoadingState(submitBtn, false, 'Зареєструватись');
         }
     }
 
@@ -601,14 +702,14 @@ class AuthModal {
             if (data.success) {
                 this.showAlert('success', data.message, 'loginModal');
                 
-                // Перенаправляем или обновляем страницу
+                // Перенаправляем или закрываем модальное окно
                 setTimeout(() => {
                     if (data.redirect) {
                         window.location.href = data.redirect;
                     } else {
-                        window.location.reload();
+                        window.location.reload(); // Перезагружаем страницу для обновления состояния
                     }
-                }, 1000);
+                }, 1500);
             } else {
                 if (data.errors) {
                     this.showFieldErrors(data.errors, 'loginModal');
@@ -626,139 +727,158 @@ class AuthModal {
     }
 
     /**
-     * Валидация формы регистрации
+     * Обработка забытого пароля
      */
-    validateRegisterForm(form) {
-        let isValid = true;
-        
-        // Очищаем предыдущие ошибки
-        this.clearErrors('registerModal');
-        
-        const email = form.email.value.trim();
-        const password = form.password.value;
-        const passwordConfirm = form.password_confirm.value;
-        const fullName = form.full_name.value.trim();
-        const acceptTerms = form.accept_terms.checked;
-        
-        // Валидация email
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            this.showFieldError('email', 'Введіть коректну email адресу', 'registerModal');
-            isValid = false;
-        }
-        
-        // Валидация пароля
-        if (password.length < 8) {
-            this.showFieldError('password', 'Пароль повинен містити мінімум 8 символів', 'registerModal');
-            isValid = false;
-        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(password)) {
-            this.showFieldError('password', 'Пароль повинен містити великі і малі літери та цифри', 'registerModal');
-            isValid = false;
-        }
-        
-        // Валидация подтверждения пароля
-        if (password !== passwordConfirm) {
-            this.showFieldError('password_confirm', 'Паролі не співпадають', 'registerModal');
-            isValid = false;
-        }
-        
-        // Валидация имени
-        if (!fullName || fullName.length < 2) {
-            this.showFieldError('full_name', 'Введіть повне ім\'я (мінімум 2 символи)', 'registerModal');
-            isValid = false;
-        }
-        
-        // Валидация согласия с условиями
-        if (!acceptTerms) {
-            this.showFieldError('accept_terms', 'Необхідно прийняти умови використання', 'registerModal');
-            isValid = false;
-        }
-        
-        return isValid;
+    handleForgotPassword() {
+        // Пока что просто показываем алерт
+        // В будущем можно добавить отдельное модальное окно для восстановления пароля
+        alert('Функція відновлення пароля буде додана найближчим часом. Зверніться до підтримки: info@stormhosting.ua');
     }
 
     /**
-     * Валидация формы входа
+     * Показ ошибки поля
      */
-    validateLoginForm(form) {
-        let isValid = true;
+    showFieldError(fieldName, message, modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
         
-        // Очищаем предыдущие ошибки
-        this.clearErrors('loginModal');
+        const field = modal.querySelector(`[name="${fieldName}"]`);
+        if (!field) return;
         
-        const email = form.email.value.trim();
-        const password = form.password.value;
+        const feedback = field.closest('.form-group')?.querySelector('.invalid-feedback') ||
+                        field.closest('.form-check')?.querySelector('.invalid-feedback');
         
-        // Валидация email
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            this.showFieldError('email', 'Введіть коректну email адресу', 'loginModal');
-            isValid = false;
+        if (feedback) {
+            feedback.textContent = message;
+            feedback.style.display = 'block';
         }
         
-        // Валидация пароля
-        if (!password) {
-            this.showFieldError('password', 'Введіть пароль', 'loginModal');
-            isValid = false;
-        }
-        
-        return isValid;
+        field.classList.add('is-invalid');
     }
 
     /**
-     * Установка состояния загрузки
+     * Очистка ошибки поля
      */
-    setLoadingState(button, loading, text) {
-        if (!button) return;
+    clearFieldError(fieldName, modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
         
-        button.disabled = loading;
+        const field = modal.querySelector(`[name="${fieldName}"]`);
+        if (!field) return;
         
-        const spinner = button.querySelector('.loading-spinner');
-        const btnText = button.querySelector('.btn-text');
+        const feedback = field.closest('.form-group')?.querySelector('.invalid-feedback') ||
+                        field.closest('.form-check')?.querySelector('.invalid-feedback');
         
-        if (spinner) {
-            spinner.style.display = loading ? 'inline-block' : 'none';
+        if (feedback) {
+            feedback.style.display = 'none';
         }
         
-        if (btnText) {
-            btnText.textContent = text;
-        }
+        field.classList.remove('is-invalid');
     }
 
     /**
-     * Показать уведомление
+     * Показ ошибок полей
+     */
+    showFieldErrors(errors, modalId) {
+        Object.keys(errors).forEach(fieldName => {
+            this.showFieldError(fieldName, errors[fieldName], modalId);
+        });
+    }
+
+    /**
+     * Показ общего алерта
      */
     showAlert(type, message, modalId) {
         const container = document.getElementById(`${modalId.replace('Modal', '')}AlertContainer`);
         if (!container) return;
         
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type} alert-dismissible fade show`;
-        alert.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="bi bi-${this.getAlertIcon(type)} me-2"></i>
-                <div>${message}</div>
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+        
+        container.innerHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="bi ${iconClass} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
         `;
         
-        container.appendChild(alert);
-        
-        // Автоматически скрыть через 5 секунд
+        // Автоматически скрываем через 5 секунд
         setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
+            const alert = container.querySelector('.alert');
+            if (alert) {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 300);
             }
         }, 5000);
     }
 
     /**
-     * Показать уведомление на главной странице
+     * Очистка всех ошибок
+     */
+    clearErrors(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        // Очищаем общие алерты
+        const alertContainer = modal.querySelector('[id$="AlertContainer"]');
+        if (alertContainer) {
+            alertContainer.innerHTML = '';
+        }
+        
+        // Очищаем ошибки полей
+        modal.querySelectorAll('.is-invalid').forEach(field => {
+            field.classList.remove('is-invalid');
+        });
+        
+        modal.querySelectorAll('.invalid-feedback').forEach(feedback => {
+            feedback.style.display = 'none';
+        });
+    }
+
+    /**
+     * Установка состояния загрузки кнопки
+     */
+    setLoadingState(button, loading, text = '') {
+        if (!button) return;
+        
+        const spinner = button.querySelector('.loading-spinner');
+        const btnText = button.querySelector('.btn-text');
+        
+        if (loading) {
+            button.disabled = true;
+            if (spinner) spinner.style.display = 'inline-block';
+            if (btnText && text) btnText.textContent = text;
+        } else {
+            button.disabled = false;
+            if (spinner) spinner.style.display = 'none';
+            if (btnText && text) btnText.textContent = text;
+        }
+    }
+
+    /**
+     * Сброс формы
+     */
+    resetForm(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const form = modal.querySelector('form');
+        if (form) {
+            form.reset();
+            this.clearErrors(modalId);
+        }
+    }
+
+    /**
+     * Показ уведомления на странице
      */
     showPageNotification(type, message) {
-        // Создаем уведомление в верхней части страницы
-        let container = document.getElementById('pageNotifications');
+        // Создаем контейнер для уведомлений если его нет
+        let container = document.getElementById('page-notifications');
         if (!container) {
             container = document.createElement('div');
-            container.id = 'pageNotifications';
+            container.id = 'page-notifications';
             container.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -769,144 +889,77 @@ class AuthModal {
             document.body.appendChild(container);
         }
         
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+        
         const notification = document.createElement('div');
-        notification.className = `alert alert-${type} alert-dismissible fade show`;
-        notification.style.cssText = `
-            margin-bottom: 10px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        `;
+        notification.className = `alert ${alertClass} alert-dismissible fade show`;
+        notification.style.cssText = 'margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
         notification.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="bi bi-${this.getAlertIcon(type)} me-2"></i>
-                <div>${message}</div>
-            </div>
+            <i class="bi ${iconClass} me-2"></i>
+            ${message}
             <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
         `;
         
         container.appendChild(notification);
         
-        // Автоматически скрыть через 5 секунд
+        // Автоматически скрываем через 5 секунд
         setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
+            if (notification.parentElement) {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
             }
         }, 5000);
     }
 
     /**
-     * Получить иконку для уведомления
+     * Получение ID модального окна из поля
      */
-    getAlertIcon(type) {
-        const icons = {
-            'success': 'check-circle-fill',
-            'danger': 'exclamation-triangle-fill',
-            'warning': 'exclamation-circle-fill',
-            'info': 'info-circle-fill'
-        };
-        return icons[type] || 'info-circle-fill';
+    getModalIdFromField(field) {
+        const form = field.closest('form');
+        if (!form) return null;
+        
+        if (form.id === 'registerForm') return 'registerModal';
+        if (form.id === 'loginForm') return 'loginModal';
+        
+        return null;
     }
 
     /**
-     * Показать ошибки полей
+     * Валидация email
      */
-    showFieldErrors(errors, modalId) {
-        Object.keys(errors).forEach(field => {
-            this.showFieldError(field, errors[field], modalId);
-        });
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 
     /**
-     * Показать ошибку поля
+     * Валидация телефона
      */
-    showFieldError(fieldName, message, modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        
-        const input = modal.querySelector(`[name="${fieldName}"]`);
-        if (input) {
-            input.classList.add('is-invalid');
-            
-            let feedback = input.parentNode.querySelector('.invalid-feedback');
-            if (!feedback) {
-                feedback = input.nextElementSibling;
-                if (!feedback || !feedback.classList.contains('invalid-feedback')) {
-                    feedback = document.createElement('div');
-                    feedback.className = 'invalid-feedback';
-                    input.parentNode.appendChild(feedback);
-                }
-            }
-            
-            if (feedback) {
-                feedback.textContent = message;
-            }
-        }
+    isValidPhone(phone) {
+        const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,20}$/;
+        return phoneRegex.test(phone);
     }
 
     /**
-     * Очистить ошибку поля
+     * Валидация пароля
      */
-    clearFieldError(fieldName, modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        
-        const input = modal.querySelector(`[name="${fieldName}"]`);
-        if (input) {
-            input.classList.remove('is-invalid');
-            
-            const feedback = input.parentNode.querySelector('.invalid-feedback');
-            if (feedback) {
-                feedback.textContent = '';
-            }
-        }
-    }
-
-    /**
-     * Очистить все ошибки
-     */
-    clearErrors(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        
-        // Очищаем ошибки полей
-        modal.querySelectorAll('.is-invalid').forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-        
-        modal.querySelectorAll('.invalid-feedback').forEach(feedback => {
-            feedback.textContent = '';
-        });
-        
-        // Очищаем уведомления
-        const alertContainer = modal.querySelector('[id$="AlertContainer"]');
-        if (alertContainer) {
-            alertContainer.innerHTML = '';
-        }
-    }
-
-    /**
-     * Очистить форму
-     */
-    clearForm(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        
-        const form = modal.querySelector('form');
-        if (form) {
-            form.reset();
-            this.clearErrors(modalId);
-            
-            // Скрываем индикатор силы пароля
-            const strengthBar = modal.querySelector('.password-strength');
-            if (strengthBar) {
-                strengthBar.style.display = 'none';
-            }
-        }
+    isValidPassword(password) {
+        // Минимум 8 символов, включая большие и малые буквы, цифры
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        return passwordRegex.test(password);
     }
 }
 
-// Инициализация при загрузке DOM
+// Автоматическая инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', function() {
-    window.authModal = new AuthModal();
-    console.log('AuthModal ready');
+    // Проверяем, не инициализован ли уже AuthModal
+    if (!window.authModal) {
+        window.authModal = new AuthModal();
+    }
 });
+
+// Экспорт для использования в других модулях
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AuthModal;
+}

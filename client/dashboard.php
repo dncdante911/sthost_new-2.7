@@ -363,7 +363,7 @@ include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
                         <h6>VPS сервери</h6>
                         <p class="mb-0 text-muted">Віртуальні сервери</p>
                     </a>
-                    <a href="/client/support.php" class="quick-action-card">
+                    <a href="/pages/contacts.php" class="quick-action-card">
                         <i class="bi bi-headset"></i>
                         <h6>Підтримка</h6>
                         <p class="mb-0 text-muted">Отримати допомогу</p>
@@ -511,7 +511,7 @@ include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
                             <a href="/client/profile.php" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-gear me-1"></i>Налаштування
                             </a>
-                            <a href="/pages/auth/logout.php" class="btn btn-outline-danger btn-sm">
+                            <a href="/auth/logout.php" class="btn btn-outline-danger btn-sm">
                                 <i class="bi bi-box-arrow-right me-1"></i>Вийти
                             </a>
                         </div>

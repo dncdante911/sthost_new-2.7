@@ -1,269 +1,265 @@
 <?php
-define('SECURE_ACCESS', true);
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/db_connect.php';
+/**
+ * Login API
+ * Файл: /api/auth/login.php
+ */
 
-// Обработка AJAX авторизации
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
-    $response = ['success' => false, 'message' => '', 'errors' => []];
-    
-    try {
-        // CSRF защита
-        $csrf_token = $_POST['csrf_token'] ?? '';
-        if (!validateCSRFToken($csrf_token)) {
-            throw new Exception('Невірний токен безпеки');
-        }
-        
-        // Получение данных
-        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
-        $password = $_POST['password'] ?? '';
-        $remember_me = !empty($_POST['remember_me']);
-        
-        // Валидация
-        if (!$email) {
-            $response['errors']['email'] = 'Введіть коректну email адресу';
-        }
-        
-        if (empty($password)) {
-            $response['errors']['password'] = 'Введіть пароль';
-        }
-        
-        // Проверка rate limiting
-        $client_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $login_attempts = DatabaseConnection::fetchOne(
-            "SELECT attempts, locked_until FROM login_attempts WHERE ip_address = ? OR email = ?",
-            [$client_ip, $email]
-        );
-        
-        if ($login_attempts && $login_attempts['locked_until'] && strtotime($login_attempts['locked_until']) > time()) {
-            $lockout_minutes = ceil((strtotime($login_attempts['locked_until']) - time()) / 60);
-            throw new Exception("Забагато невдалих спроб входу. Спробуйте через {$lockout_minutes} хвилин.");
-        }
-        
-        // Если есть ошибки валидации, возвращаем их
-        if (!empty($response['errors'])) {
-            $response['message'] = 'Будь ласка, виправте помилки у формі';
-            header('Content-Type: application/json');
-            echo json_encode($response);
-            exit;
-        }
-        
-        // Проверяем пользователя в БД
-        $user = DatabaseConnection::fetchOne(
-            "SELECT id, email, password, full_name, language, is_active, fossbilling_client_id FROM users WHERE email = ?",
-            [$email]
-        );
-        
-        if (!$user || !password_verify($password, $user['password'])) {
-            // Записываем неудачную попытку
-            recordLoginAttempt($client_ip, $email, false);
-            throw new Exception('Невірний email або пароль');
-        }
-        
-        if (!$user['is_active']) {
-            throw new Exception('Ваш обліковий запис деактивовано. Зверніться до підтримки.');
-        }
-        
-        // Успешная авторизация
-        recordLoginAttempt($client_ip, $email, true);
-        
-        // Обновляем время последнего входа
-        DatabaseConnection::execute(
-            "UPDATE users SET last_login = NOW() WHERE id = ?",
-            [$user['id']]
-        );
-        
-        // Устанавливаем сессию
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_email'] = $user['email'];
-        $_SESSION['user_name'] = $user['full_name'];
-        $_SESSION['user_language'] = $user['language'];
-        $_SESSION['is_logged_in'] = true;
-        $_SESSION['fossbilling_client_id'] = $user['fossbilling_client_id'];
-        
-        // Если выбрано "Запомнить меня"
-        if ($remember_me) {
-            $token = bin2hex(random_bytes(32));
-            setcookie('remember_token', $token, time() + (30 * 24 * 60 * 60), '/', '', true, true); // 30 дней
-            
-            // Сохраняем токен в БД
-            try {
-                DatabaseConnection::insert(
-                    "INSERT INTO remember_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY))",
-                    [$user['id'], hash('sha256', $token)]
-                );
-            } catch (Exception $e) {
-                // Игнорируем ошибку с remember token, не критично
-                error_log('Remember token error: ' . $e->getMessage());
-            }
-        }
-        
-        // Логируем успешный вход
-        DatabaseConnection::insert(
-            "INSERT INTO security_logs (ip_address, user_id, action, details, severity) VALUES (?, ?, ?, ?, ?)",
-            [
-                $client_ip,
-                $user['id'],
-                'user_login',
-                'Успішний вхід в систему',
-                'low'
-            ]
-        );
-        
-        $response['success'] = true;
-        $response['message'] = 'Авторизація успішна!';
-        $response['redirect'] = '/client/dashboard.php';
-        
-    } catch (Exception $e) {
-        $response['message'] = $e->getMessage();
-        
-        // Логируем ошибку
-        error_log('Login error: ' . $e->getMessage());
-    }
-    
-    header('Content-Type: application/json');
-    echo json_encode($response);
+// Защита от прямого доступа
+define('SECURE_ACCESS', true);
+
+// Настройка заголовков
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+
+// Обработка OPTIONS запроса
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit;
 }
 
-// Функция записи попыток входа
-function recordLoginAttempt($ip, $email, $success) {
+// Проверяем метод запроса
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Метод не дозволений']);
+    exit;
+}
+
+// Начинаем сессию
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Подключение к БД
+try {
+    // Попытка подключения через includes
+    if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/includes/config.php')) {
+        require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+    }
+    
+    if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/includes/db_connect.php')) {
+        require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/db_connect.php';
+        $pdo = DatabaseConnection::getSiteConnection();
+    } else {
+        // Прямое подключение к БД
+        $host = 'localhost';
+        $dbname = 'sthostsitedb';
+        $username = 'sthostdb';
+        $password = '3344Frz@q0607Dm$157';
+        
+        $pdo = new PDO(
+            "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
+            $username,
+            $password,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]
+        );
+    }
+} catch (Exception $e) {
+    error_log('Database connection failed: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Помилка підключення до бази даних']);
+    exit;
+}
+
+// Функция для отправки ответа
+function sendResponse($success, $message, $data = [], $errors = []) {
+    $response = [
+        'success' => $success,
+        'message' => $message
+    ];
+    
+    if (!empty($data)) {
+        $response = array_merge($response, $data);
+    }
+    
+    if (!empty($errors)) {
+        $response['errors'] = $errors;
+    }
+    
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Rate limiting для попыток входа
+function checkLoginRateLimit($pdo, $ip, $email = null) {
     try {
-        if ($success) {
-            // Удаляем записи о неудачных попытках
-            DatabaseConnection::execute(
-                "DELETE FROM login_attempts WHERE ip_address = ? OR email = ?",
-                [$ip, $email]
-            );
-        } else {
-            // Увеличиваем счетчик попыток
-            $existing = DatabaseConnection::fetchOne(
-                "SELECT id, attempts FROM login_attempts WHERE ip_address = ? OR email = ?",
-                [$ip, $email]
-            );
-            
-            if ($existing) {
-                $new_attempts = $existing['attempts'] + 1;
-                $locked_until = null;
-                
-                // Блокировка после 5 попыток на 15 минут
-                if ($new_attempts >= 5) {
-                    $locked_until = date('Y-m-d H:i:s', time() + 900); // 15 минут
-                }
-                
-                DatabaseConnection::execute(
-                    "UPDATE login_attempts SET attempts = ?, last_attempt = NOW(), locked_until = ? WHERE id = ?",
-                    [$new_attempts, $locked_until, $existing['id']]
-                );
-            } else {
-                DatabaseConnection::insert(
-                    "INSERT INTO login_attempts (ip_address, email, attempts, last_attempt) VALUES (?, ?, 1, NOW())",
-                    [$ip, $email]
-                );
-            }
+        $sql = "SELECT COUNT(*) as count FROM login_attempts WHERE ip_address = ? AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)";
+        $params = [$ip];
+        
+        if ($email) {
+            $sql .= " OR (email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE))";
+            $params[] = $email;
         }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetch();
+        
+        return $result['count'] < 10; // 10 попыток в 15 минут
     } catch (Exception $e) {
-        error_log('Login attempt recording error: ' . $e->getMessage());
+        return true; // В случае ошибки разрешаем
     }
 }
 
-// Генерируем CSRF токен для формы
-$csrf_token = generateCSRFToken();
+// Логирование попыток входа
+function logLoginAttempt($pdo, $ip, $email, $success, $user_id = null) {
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO login_attempts (ip_address, email, user_id, success, created_at) 
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        $stmt->execute([$ip, $email, $user_id, $success ? 1 : 0]);
+    } catch (Exception $e) {
+        error_log('Failed to log login attempt: ' . $e->getMessage());
+    }
+}
 
-include $_SERVER['DOCUMENT_ROOT'] . '/includes/header.php';
+// Создание таблицы login_attempts если не существует
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS login_attempts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(45) NOT NULL,
+            email VARCHAR(255),
+            user_id INT,
+            success BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ip_time (ip_address, created_at),
+            INDEX idx_email_time (email, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+} catch (Exception $e) {
+    error_log('Failed to create login_attempts table: ' . $e->getMessage());
+}
+
+// Получаем IP адрес
+$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'];
+
+// Получаем данные из POST
+$email = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+$remember_me = isset($_POST['remember_me']);
+
+// Базовая валидация
+$errors = [];
+
+if (empty($email)) {
+    $errors['email'] = 'Вкажіть email адресу';
+} elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $errors['email'] = 'Невірний формат email';
+}
+
+if (empty($password)) {
+    $errors['password'] = 'Вкажіть пароль';
+}
+
+// Если есть ошибки валидации
+if (!empty($errors)) {
+    logLoginAttempt($pdo, $client_ip, $email, false);
+    sendResponse(false, 'Заповніть всі поля правильно', [], $errors);
+}
+
+// Проверяем rate limit
+if (!checkLoginRateLimit($pdo, $client_ip, $email)) {
+    logLoginAttempt($pdo, $client_ip, $email, false);
+    sendResponse(false, 'Занадто багато спроб входу. Спробуйте через 15 хвилин.');
+}
+
+// Ищем пользователя в базе
+try {
+    $stmt = $pdo->prepare("
+        SELECT id, full_name, email, password_hash, email_verified, created_at 
+        FROM users 
+        WHERE email = ?
+    ");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+    
+    if (!$user) {
+        logLoginAttempt($pdo, $client_ip, $email, false);
+        sendResponse(false, 'Невірний email або пароль', [], ['email' => 'Користувач не знайдений']);
+    }
+    
+    // Проверяем пароль
+    if (!password_verify($password, $user['password_hash'])) {
+        logLoginAttempt($pdo, $client_ip, $email, false, $user['id']);
+        sendResponse(false, 'Невірний email або пароль', [], ['password' => 'Невірний пароль']);
+    }
+    
+    // Логируем успешный вход
+    logLoginAttempt($pdo, $client_ip, $email, true, $user['id']);
+    
+    // Создаем сессию
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['user_email'] = $user['email'];
+    $_SESSION['user_name'] = $user['full_name'];
+    $_SESSION['user_verified'] = $user['email_verified'];
+    $_SESSION['login_time'] = time();
+    
+    // Если выбрано "Запомнить меня"
+    if ($remember_me) {
+        // Генерируем токен для remember me
+        $remember_token = bin2hex(random_bytes(32));
+        $expires = time() + (30 * 24 * 60 * 60); // 30 дней
+        
+        // Сохраняем токен в базе (создадим таблицу если нужно)
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS remember_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    token VARCHAR(64) NOT NULL UNIQUE,
+                    expires_at TIMESTAMP NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_token (token),
+                    INDEX idx_user_id (user_id),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            
+            // Удаляем старые токены пользователя
+            $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE user_id = ?");
+            $stmt->execute([$user['id']]);
+            
+            // Добавляем новый токен
+            $stmt = $pdo->prepare("
+                INSERT INTO remember_tokens (user_id, token, expires_at) 
+                VALUES (?, ?, FROM_UNIXTIME(?))
+            ");
+            $stmt->execute([$user['id'], $remember_token, $expires]);
+            
+            // Устанавливаем cookie
+            setcookie('remember_token', $remember_token, $expires, '/', '', true, true);
+            
+        } catch (Exception $e) {
+            error_log('Failed to set remember token: ' . $e->getMessage());
+        }
+    }
+    
+    // Обновляем время последнего входа
+    try {
+        $stmt = $pdo->prepare("UPDATE users SET updated_at = NOW() WHERE id = ?");
+        $stmt->execute([$user['id']]);
+    } catch (Exception $e) {
+        error_log('Failed to update last login: ' . $e->getMessage());
+    }
+    
+    sendResponse(true, 'Успішний вхід в систему!', [
+        'user' => [
+            'id' => $user['id'],
+            'name' => $user['full_name'],
+            'email' => $user['email'],
+            'verified' => $user['email_verified']
+        ],
+        'redirect' => '/' // Можно изменить на страницу личного кабинета
+    ]);
+    
+} catch (Exception $e) {
+    error_log('Login failed: ' . $e->getMessage());
+    logLoginAttempt($pdo, $client_ip, $email, false);
+    sendResponse(false, 'Помилка входу в систему. Спробуйте ще раз.');
+}
 ?>
-
-<!DOCTYPE html>
-<html lang="ua">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вхід - StormHosting UA</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="/assets/css/pages/auth-login.css" rel="stylesheet">
-</head>
-<body>
-    <div class="login-container">
-        <div class="login-header">
-            <h1><i class="bi bi-box-arrow-in-right me-2"></i>Вхід</h1>
-            <p>Увійдіть в ваш обліковий запис</p>
-        </div>
-        
-        <div id="alertContainer"></div>
-        
-        <form id="loginForm" novalidate>
-            <input type="hidden" name="csrf_token" value="<?php echo escapeOutput($csrf_token); ?>">
-            <input type="hidden" name="action" value="login">
-            
-            <div class="form-group">
-                <label for="email" class="form-label">
-                    <i class="bi bi-envelope me-1"></i>Email адреса
-                </label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-envelope"></i>
-                    </span>
-                    <input type="email" 
-                           id="email" 
-                           name="email" 
-                           class="form-control" 
-                           placeholder="Введіть ваш email"
-                           required
-                           autocomplete="email">
-                </div>
-                <div class="invalid-feedback"></div>
-            </div>
-            
-            <div class="form-group">
-                <label for="password" class="form-label">
-                    <i class="bi bi-lock me-1"></i>Пароль
-                </label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-lock"></i>
-                    </span>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           class="form-control" 
-                           placeholder="Введіть ваш пароль"
-                           required
-                           autocomplete="current-password">
-                    <button type="button" class="btn btn-outline-secondary" id="togglePassword">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-                <div class="invalid-feedback"></div>
-            </div>
-            
-            <div class="form-check">
-                <input type="checkbox" id="remember_me" name="remember_me" class="form-check-input">
-                <label for="remember_me" class="form-check-label">
-                    Запам'ятати мене
-                </label>
-            </div>
-            
-            <button type="submit" class="btn btn-login" id="submitBtn">
-                <div class="spinner-border spinner-border-sm loading-spinner" role="status">
-                    <span class="visually-hidden">Завантаження...</span>
-                </div>
-                <span class="btn-text">Увійти</span>
-            </button>
-        </form>
-        
-        <div class="forgot-password">
-            <a href="/auth/forgot-password.php">Забули пароль?</a>
-        </div>
-        
-        <div class="register-link">
-            <p>Немає облікового запису? <a href="/auth/register.php">Зареєструйтеся тут</a></p>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/js/auth-login.js"></script>
-</body>
-</html>
-
-<?php include $_SERVER['DOCUMENT_ROOT'] . '/includes/footer.php'; ?>

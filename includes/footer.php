@@ -6,6 +6,26 @@
             --primary-dark: #0056b3;
         }
         
+        body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Скрываем возможные стрелки навигации или debug элементы */
+.arrow-up,
+.arrow-down,
+.scroll-indicator,
+.back-to-top,
+.floating-arrow {
+    display: none !important;
+}
+
+/* Убираем возможные margin/padding снизу страницы */
+html, body {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+        
         .footer {
             background: #343a40;
             color: white;
