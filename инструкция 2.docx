@@ -1,0 +1,347 @@
+🚀 Интеграция FOSSBilling с StormHosting UA
+📋 ЭТАПЫ ИНТЕГРАЦИИ
+1. УСТАНОВКА МОДУЛЕЙ ОПЛАТЫ
+bash# Скачайте файлы модулей
+cd /var/www/bill.sthost.pro
+php install_payment_modules.php
+
+# Или через браузер:
+# https://bill.sthost.pro/install_payment_modules.php
+2. НАСТРОЙКА API КЛЮЧЕЙ
+🟦 LiqPay:
+Public Key: i00000000 (из кабинета LiqPay)
+Private Key: ваш_приватный_ключ 
+Sandbox: включить для тестов
+Language: uk
+🟪 iPay:
+Merchant ID: ваш_merchant_id
+Secret Key: ваш_секретный_ключ
+Payment Methods: card,privat24,monobank
+Language: uk
+🟨 Way4Pay:
+Merchant Account: ваше_имя_мерчанта
+Secret Key: ваш_секретный_ключ
+Auto Redirect: да
+Language: uk
+
+🔗 ИНТЕГРАЦИЯ С САЙТОМ
+1. ОБНОВИТЬ includes/config.php
+php// FOSSBilling API настройки
+define('FOSSBILLING_URL', 'https://bill.sthost.pro');
+define('FOSSBILLING_API_URL', 'https://bill.sthost.pro/api');
+define('FOSSBILLING_API_TOKEN', 'ваш_api_токен');
+
+// Маппинг услуг
+$service_types_map = [
+    'shared_hosting' => 1,    // ID продукта в FOSSBilling
+    'cloud_hosting' => 2,
+    'reseller_hosting' => 3,
+    'vps' => 4,
+    'dedicated' => 5,
+    'domain_registration' => 6
+];
+2. СОЗДАТЬ FOSSBilling API КЛИЕНТ
+php// Файл: /includes/fossbilling_client.php
+<?php
+class FOSSBillingClient {
+    private $api_url;
+    private $api_token;
+    
+    public function __construct() {
+        $this->api_url = FOSSBILLING_API_URL;
+        $this->api_token = FOSSBILLING_API_TOKEN;
+    }
+    
+    // Создание клиента
+    public function createClient($clientData) {
+        return $this->makeRequest('admin/client/create', $clientData);
+    }
+    
+    // Создание заказа
+    public function createOrder($orderData) {
+        return $this->makeRequest('admin/order/create', $orderData);
+    }
+    
+    // Получение URL оплаты
+    public function getPaymentUrl($orderId) {
+        return FOSSBILLING_URL . '/order/' . $orderId;
+    }
+    
+    private function makeRequest($endpoint, $data) {
+        $data['token'] = $this->api_token;
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $this->api_url . '/' . $endpoint);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
+        return json_decode($response, true);
+    }
+}
+?>
+3. ОБНОВИТЬ КНОПКИ НА САЙТЕ
+А) Главная страница (/pages/home.php):
+javascript// Добавить в конец файла перед </body>
+<script>
+function orderService(serviceType, planId, planName, price) {
+    // Показать загрузку
+    showLoading('Створення замовлення...');
+    
+    // Отправить на сервер
+    fetch('/api/create_order.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify({
+            service_type: serviceType,
+            plan_id: planId,
+            plan_name: planName,
+            price: price
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            // Перенаправление на FOSSBilling
+            window.location.href = data.payment_url;
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('Помилка створення замовлення');
+    });
+}
+
+// Обновить кнопки доменов
+document.querySelectorAll('.domain-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const card = this.closest('.domain-card');
+        const zone = card.querySelector('.domain-zone').textContent;
+        const price = parseFloat(card.querySelector('.domain-price').textContent);
+        
+        orderService('domain_registration', 0, 'Домен ' + zone, price);
+    });
+});
+
+// Обновить кнопки хостинга
+document.querySelectorAll('.plan-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const planId = this.dataset.planId;
+        const planName = this.dataset.planName;
+        const price = this.dataset.price;
+        
+        orderService('shared_hosting', planId, planName, price);
+    });
+});
+</script>
+Б) Хостинг страницы:
+php// В shared.php, cloud.php, reseller.php
+// Обновить JavaScript обработчики кнопок:
+
+$('#orderForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const orderData = {
+        service_type: 'shared_hosting',
+        plan_id: formData.get('plan_id'),
+        plan_name: formData.get('plan_name'), 
+        billing_period: formData.get('billing_period'),
+        price: calculatePrice(),
+        client_data: {
+            name: formData.get('client_name'),
+            email: formData.get('client_email'),
+            phone: formData.get('client_phone')
+        }
+    };
+    
+    createFOSSBillingOrder(orderData);
+});
+В) VDS страницы:
+php// В virtual.php, dedicated.php
+// Обновить функции заказа:
+
+function orderVPS(planData) {
+    const orderData = {
+        service_type: 'vps',
+        plan_id: planData.id,
+        plan_name: planData.name,
+        specifications: planData.specs,
+        price: planData.price
+    };
+    
+    createFOSSBillingOrder(orderData);
+}
+4. СОЗДАТЬ API ОБРАБОТЧИК
+php// Файл: /api/create_order.php
+<?php
+define('SECURE_ACCESS', true);
+require_once '../includes/config.php';
+require_once '../includes/fossbilling_client.php';
+
+header('Content-Type: application/json');
+
+try {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input) {
+        throw new Exception('Invalid input data');
+    }
+    
+    $fossbilling = new FOSSBillingClient();
+    
+    // Создание или получение клиента
+    $clientData = [
+        'email' => $input['client_data']['email'] ?? 'guest@sthost.pro',
+        'first_name' => $input['client_data']['name'] ?? 'Guest',
+        'last_name' => 'User',
+        'company' => '',
+        'phone' => $input['client_data']['phone'] ?? '',
+        'country' => 'UA',
+        'password' => bin2hex(random_bytes(8))
+    ];
+    
+    $client = $fossbilling->createClient($clientData);
+    
+    if (!$client['result']) {
+        throw new Exception('Client creation failed');
+    }
+    
+    // Создание заказа
+    global $service_types_map;
+    $product_id = $service_types_map[$input['service_type']] ?? 1;
+    
+    $orderData = [
+        'client_id' => $client['result']['id'],
+        'product_id' => $product_id,
+        'period' => $input['billing_period'] ?? '1M',
+        'price' => $input['price'],
+        'title' => $input['plan_name'],
+        'config' => json_encode($input)
+    ];
+    
+    $order = $fossbilling->createOrder($orderData);
+    
+    if (!$order['result']) {
+        throw new Exception('Order creation failed');
+    }
+    
+    // Возврат URL для оплаты
+    echo json_encode([
+        'success' => true,
+        'order_id' => $order['result']['id'],
+        'client_id' => $client['result']['id'],
+        'payment_url' => $fossbilling->getPaymentUrl($order['result']['id'])
+    ]);
+    
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
+}
+?>
+
+⚙️ НАСТРОЙКА ПРОДУКТОВ В FOSSBILLING
+1. Создать продукты:
+ID 1: Shared Hosting - Базовий (99 грн/міс)
+ID 2: Cloud Hosting - Хмарний (199 грн/міс)  
+ID 3: Reseller Hosting - Реселер (999 грн/міс)
+ID 4: VPS Hosting - Віртуальний сервер (299 грн/міс)
+ID 5: Dedicated Server - Виділений сервер (1999 грн/міс)
+ID 6: Domain Registration - Реєстрація домену (150 грн/рік)
+2. Настроить автоматизацию:
+
+Подключить cPanel/WHM для автосоздания аккаунтов
+Настроить email уведомления о новых заказах
+Включить автоактивацию после оплаты
+
+
+🔄 ОБРАБОТКА CALLBACK
+Файл: /api/fossbilling_callback.php
+php<?php
+define('SECURE_ACCESS', true);
+require_once '../includes/config.php';
+
+// Обработка webhook от FOSSBilling
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+if ($data && isset($data['event'])) {
+    switch ($data['event']) {
+        case 'order_paid':
+            // Заказ оплачен - активировать услугу
+            activateService($data['order_id']);
+            break;
+            
+        case 'order_canceled':
+            // Заказ отменен
+            cancelService($data['order_id']);
+            break;
+    }
+}
+
+function activateService($orderId) {
+    // Логика активации услуги
+    error_log("Order {$orderId} activated");
+}
+
+function cancelService($orderId) {
+    // Логика отмены услуги  
+    error_log("Order {$orderId} canceled");
+}
+
+echo 'OK';
+?>
+
+🎯 ТЕСТИРОВАНИЕ
+1. Проверить модули:
+bash# Войти в админку FOSSBilling
+https://bill.sthost.pro/bb-admin
+
+# Configuration → Payment gateways
+# Активировать LiqPay, iPay, Way4Pay
+# Ввести тестовые ключи
+2. Тестовые данные:
+LiqPay Sandbox:
+Карта: 4000000000000002
+CVV: 123
+Срок: 12/25
+iPay Test:
+Карта: 4444555566661111  
+CVV: 111
+Срок: 12/25
+Way4Pay Test:
+Карта: 4441114444111115
+CVV: 123
+Срок: 12/25
+3. Проверить интеграцию:
+
+Зайти на главную сайта
+Нажать "Обрати план"
+Заполнить форму
+Проверить создание заказа в FOSSBilling
+Протестировать оплату
+Проверить активацию услуги
+
+
+🚀 ГОТОВО!
+После выполнения всех шагов у вас будет:
+✅ 3 платежных модуля для FOSSBilling
+✅ Интеграция с сайтом StormHosting UA
+✅ Автоматическое создание заказов
+✅ Украинские платежные системы LiqPay, iPay, Way4Pay
+✅ Автоматизация активации услуг
+Все кнопки покупки на сайте теперь ведут в FOSSBilling для оплаты! 🎉
