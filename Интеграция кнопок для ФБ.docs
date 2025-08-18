@@ -1,0 +1,317 @@
+🎯 Места для интеграции FossBilling в StormHosting UA
+📋 ОБЩАЯ СТРАТЕГИЯ ИНТЕГРАЦИИ:
+Все кнопки покупки должны:
+
+Собирать данные о выбранной услуге
+Создавать заказ в FossBilling через API
+Перенаправлять на страницу оплаты FossBilling
+Обрабатывать callback после оплаты
+
+
+🏠 1. ГЛАВНАЯ СТРАНИЦА
+📍 Файл: /pages/home.php
+Места интеграции:
+а) Секция "Услуги" - 3 кнопки:
+php// Строки 243, 283, 323 - кнопки "Детальніше"
+<a href="/pages/hosting/shared.php" class="service-btn">Детальніше</a>
+➤ ИЗМЕНИТЬ НА:
+javascriptonclick="redirectToService('hosting', 'shared')"
+onclick="redirectToService('vds', 'virtual')" 
+onclick="redirectToService('domains', 'register')"
+б) Секция "Популярные домены" - 6 кнопок:
+php// Строка 350+ - кнопки "Зареєструвати"
+<a href="/pages/domains/register.php" class="domain-btn">Зареєструвати</a>
+➤ ДОБАВИТЬ:
+javascriptonclick="orderDomain('<?php echo $domain['zone']; ?>', <?php echo $domain['price_registration']; ?>)"
+в) Секция "Тарифы хостинга" - 3 кнопки:
+php// Строка 450+ - кнопки "Обрати план"
+<a href="/pages/hosting/shared.php" class="plan-btn">Обрати план</a>
+➤ ИЗМЕНИТЬ НА:
+javascriptonclick="orderHostingPlan(<?php echo $plan['id']; ?>, '<?php echo $plan['name_ua']; ?>', <?php echo $plan['price_monthly']; ?>)"
+
+🌐 2. ДОМЕННАЯ СЕКЦИЯ
+📍 Файл: /pages/domains/register.php
+Места интеграции:
+а) Форма поиска доменов:
+php// В JavaScript секции - функция поиска
+function searchDomain() {
+    // После проверки доступности
+    if (domain.available) {
+        showOrderButton(domain.name, domain.price);
+    }
+}
+➤ ДОБАВИТЬ:
+javascriptfunction orderDomain(domainName, price, zone) {
+    // Создание заказа в FossBilling
+    fetch('/api/domains/order.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            action: 'create_order',
+            domain: domainName,
+            zone: zone,
+            price: price,
+            service_type: 'domain_registration'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Перенаправление на FossBilling
+            window.location.href = data.fossbilling_url;
+        }
+    });
+}
+📍 Файл: /pages/domains/transfer.php
+Кнопка "Подати заявку" - добавить заказ трансфера через FossBilling
+
+🖥️ 3. ХОСТИНГ СЕКЦИЯ
+📍 Файл: /pages/hosting/shared.php
+Места интеграции:
+а) Кнопки планов хостинга:
+php// Строка 180+ - в модальном окне заказа
+<button type="submit" class="btn btn-primary">Замовити план</button>
+➤ ИЗМЕНИТЬ обработчик формы:
+javascript$('#orderForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const orderData = {
+        action: 'create_order',
+        plan_id: formData.get('plan_id'),
+        plan_name: formData.get('plan_name'),
+        billing_period: formData.get('billing_period'),
+        price: calculatePrice(),
+        service_type: 'shared_hosting'
+    };
+    
+    // Отправка в FossBilling
+    createFossBillingOrder(orderData);
+});
+📍 Файл: /pages/hosting/cloud.php
+Кнопка калькулятора "Замовити конфігурацію":
+javascript// В функции заказа
+function orderCloudConfig() {
+    const config = getCurrentConfig();
+    const orderData = {
+        action: 'create_order',
+        service_type: 'cloud_hosting',
+        configuration: config,
+        price: config.total_price
+    };
+    
+    createFossBillingOrder(orderData);
+}
+📍 Файл: /pages/hosting/reseller.php
+4 кнопки планов реселлера:
+javascriptfunction orderReseller(planType) {
+    const plans = {
+        'start': {id: 1, name: 'Reseller Start', price: 1499},
+        'pro': {id: 2, name: 'Reseller Pro', price: 2999},
+        // ...
+    };
+    
+    createFossBillingOrder({
+        action: 'create_order',
+        service_type: 'reseller_hosting',
+        plan: plans[planType]
+    });
+}
+
+💻 4. VDS/VPS СЕКЦИЯ
+📍 Файл: /pages/vds/virtual.php
+4 кнопки VPS планов:
+javascript// В обработчике заказа
+function orderVPS(planData) {
+    fetch('/api/vds/order.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            action: 'create_order',
+            plan_id: planData.id,
+            service_type: 'vps',
+            specifications: planData.specs,
+            price: planData.price
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.payment_link;
+        }
+    });
+}
+📍 Файл: /pages/vds/dedicated.php
+4 кнопки Dedicated серверов - аналогично VPS
+📍 Файл: /pages/vds/vds-calc.php
+Кнопка калькулятора "Замовити"
+
+📧 5. СОЗДАТЬ API ФАЙЛЫ
+📍 Создать: /api/fossbilling/client.php
+php<?php
+class FossBillingClient {
+    private $api_url;
+    private $api_token;
+    
+    public function __construct() {
+        $this->api_url = FOSSBILLING_URL . '/api';
+        $this->api_token = FOSSBILLING_API_TOKEN;
+    }
+    
+    public function createOrder($orderData) {
+        return $this->makeRequest('admin/order/create', $orderData);
+    }
+    
+    public function createProduct($productData) {
+        return $this->makeRequest('admin/product/create', $productData);
+    }
+    
+    public function getOrderStatus($orderId) {
+        return $this->makeRequest('admin/order/get', ['id' => $orderId]);
+    }
+    
+    private function makeRequest($endpoint, $data) {
+        // HTTP запрос к FossBilling API
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $this->api_url . '/' . $endpoint,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->api_token
+            ],
+            CURLOPT_RETURNTRANSFER => true
+        ]);
+        
+        $response = curl_exec($curl);
+        curl_close($curl);
+        
+        return json_decode($response, true);
+    }
+}
+?>
+📍 Создать: /api/orders/create.php
+php<?php
+require_once '../fossbilling/client.php';
+
+$fossBilling = new FossBillingClient();
+
+// Получение данных заказа
+$input = json_decode(file_get_contents('php://input'), true);
+
+// Создание продукта в FossBilling
+$product = $fossBilling->createProduct([
+    'type' => $input['service_type'],
+    'title' => $input['plan_name'],
+    'price' => $input['price']
+]);
+
+// Создание заказа
+$order = $fossBilling->createOrder([
+    'product_id' => $product['id'],
+    'client_id' => getCurrentClientId(),
+    'period' => $input['billing_period'] ?? 'monthly'
+]);
+
+// Возврат ссылки на оплату
+echo json_encode([
+    'success' => true,
+    'order_id' => $order['id'],
+    'payment_link' => FOSSBILLING_URL . '/order/' . $order['id'],
+    'fossbilling_url' => FOSSBILLING_URL . '/cart'
+]);
+?>
+
+⚙️ 6. ОБЩАЯ JAVASCRIPT ФУНКЦИЯ
+📍 Добавить в: /assets/js/main.js
+javascript// Универсальная функция создания заказа
+function createFossBillingOrder(orderData) {
+    // Показать загрузку
+    showLoading('Створення замовлення...');
+    
+    fetch('/api/orders/create.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        
+        if (data.success) {
+            // Перенаправление на FossBilling
+            window.location.href = data.payment_link;
+        } else {
+            showError(data.message || 'Помилка створення замовлення');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('Помилка з\'єднання з сервером');
+        console.error('Order creation error:', error);
+    });
+}
+
+// Получение текущего клиента (из сессии или создание нового)
+function getCurrentClientId() {
+    // Если пользователь авторизован - возвращаем его ID
+    // Если нет - создаем временного клиента в FossBilling
+    return localStorage.getItem('client_id') || null;
+}
+
+// Показ уведомлений
+function showLoading(message) {
+    // Показать спиннер загрузки
+}
+
+function showError(message) {
+    // Показать ошибку
+}
+
+🔧 7. КОНФИГУРАЦИЯ
+📍 Обновить: /includes/config.php
+php// FossBilling настройки (уже есть)
+define('FOSSBILLING_URL', 'https://bill.sthost.pro');
+define('FOSSBILLING_API_TOKEN', 'ваш_api_токен_от_fossbilling');
+
+// Маппинг типов услуг
+$service_types_mapping = [
+    'shared_hosting' => 'hosting',
+    'cloud_hosting' => 'hosting_cloud', 
+    'reseller_hosting' => 'hosting_reseller',
+    'vps' => 'vps',
+    'dedicated' => 'dedicated',
+    'domain_registration' => 'domain',
+    'domain_transfer' => 'domain_transfer'
+];
+
+📝 ИТОГО: СПИСОК ФАЙЛОВ ДЛЯ ИЗМЕНЕНИЯ
+Основные страницы с кнопками:
+
+✅ /pages/home.php - 12+ кнопок покупки
+✅ /pages/domains/register.php - кнопки регистрации
+✅ /pages/domains/transfer.php - кнопка трансфера
+✅ /pages/hosting/shared.php - 4 кнопки планов
+✅ /pages/hosting/cloud.php - кнопка калькулятора
+✅ /pages/hosting/reseller.php - 4 кнопки планов
+✅ /pages/vds/virtual.php - 4 кнопки VPS
+✅ /pages/vds/dedicated.php - 4 кнопки Dedicated
+✅ /pages/vds/vds-calc.php - кнопка калькулятора
+
+API файлы для создания:
+
+🆕 /api/fossbilling/client.php - клиент FossBilling
+🆕 /api/orders/create.php - создание заказов
+🆕 /api/domains/order.php - заказы доменов
+🆕 /api/callback/fossbilling.php - обработка callback
+
+Обновить существующие:
+
+✅ /assets/js/main.js - общие функции
+✅ /includes/config.php - настройки FossBilling
+
+Всего: ~50 кнопок покупки нужно интегрировать с FossBilling! 🎯
